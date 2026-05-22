@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -67,6 +68,10 @@ func (uc *CreateProduct) Execute(
 			storage.ProductsPath,
 		)
 		if err != nil {
+			if errors.Is(err, storage.ErrContentTypeNotAllowed) {
+				return CreateProductOutput{}, product.ErrInvalidImageFormat
+			}
+
 			return CreateProductOutput{}, fmt.Errorf("upload image: %v", err)
 		}
 	}

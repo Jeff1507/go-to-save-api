@@ -75,6 +75,10 @@ func (uc *UpdateProduct) Execute(ctx context.Context, input UpdateProductInput) 
 			storage.ProductsPath,
 		)
 		if err != nil {
+			if errors.Is(err, storage.ErrContentTypeNotAllowed) {
+				return product.ErrInvalidImageFormat
+			}
+
 			return fmt.Errorf("upload image: %v", err)
 		}
 	}

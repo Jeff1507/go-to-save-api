@@ -3,6 +3,7 @@ package product
 import "errors"
 
 var (
-	ErrAlreadyExists = errors.New("product already exists")
-	ErrNotFound      = errors.New("product not found")
+	ErrAlreadyExists      = errors.New("product already exists")
+	ErrNotFound           = errors.New("product not found")
+	ErrInvalidImageFormat = errors.New("invalid image format")
 )
