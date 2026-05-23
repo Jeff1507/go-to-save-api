@@ -48,6 +48,14 @@ func InternalServerError(w http.ResponseWriter) {
 	Error(w, http.StatusInternalServerError, "Erro interno no servidor")
 }
 
+func InvalidRequestBody(w http.ResponseWriter) {
+	Error(w, http.StatusBadRequest, "Corpo da requisição inválido")
+}
+
+func InvalidMultipartForm(w http.ResponseWriter) {
+	Error(w, http.StatusBadRequest, "Formulário inválido")
+}
+
 func Unauthorized(w http.ResponseWriter) {
 	Error(w, http.StatusUnauthorized, "Sem autorização")
 }
