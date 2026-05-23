@@ -5,9 +5,12 @@ import (
 	"log"
 
 	"github.com/Jeff1507/go-to-save-api/internal/common/clock"
-	"github.com/Jeff1507/go-to-save-api/internal/core/product/handler"
-	"github.com/Jeff1507/go-to-save-api/internal/core/product/repository"
-	"github.com/Jeff1507/go-to-save-api/internal/core/product/usecase"
+	pickupHandler "github.com/Jeff1507/go-to-save-api/internal/core/pickup/handler"
+	pickupRepository "github.com/Jeff1507/go-to-save-api/internal/core/pickup/repository"
+	pickupUseCase "github.com/Jeff1507/go-to-save-api/internal/core/pickup/usecase"
+	productHandler "github.com/Jeff1507/go-to-save-api/internal/core/product/handler"
+	productRepository "github.com/Jeff1507/go-to-save-api/internal/core/product/repository"
+	productUseCase "github.com/Jeff1507/go-to-save-api/internal/core/product/usecase"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/api/routes"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/api/server"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/storage"
@@ -27,15 +30,30 @@ func start() error {
 		return fmt.Errorf("new local storage: %v", err)
 	}
 
-	productRepo := repository.NewInMemRepo()
+	pickupRepo := pickupRepository.NewInMemRepo()
+	productRepo := productRepository.NewInMemRepo()
 
-	createProduct := usecase.NewCreateProduct(sysClock, localStorage, productRepo)
-	updateProduct := usecase.NewUpdateProduct(sysClock, localStorage, productRepo)
-	deleteProduct := usecase.NewDeleteProduct(localStorage, productRepo)
+	createPickupTemplate := pickupUseCase.NewCreatePickupTemplate(pickupRepo)
+	updatePickupTemplate := pickupUseCase.NewUpdatePickupTemplate(pickupRepo)
+	deletPickupTemplate := pickupUseCase.NewDeletePickupTemplate(pickupRepo)
 
-	createProductHandler := handler.NewCreateProduct(createProduct)
-	updateProductHandler := handler.NewUpdateProduct(updateProduct)
-	deleteProductHandler := handler.NewDeleteProduct(deleteProduct)
+	createProduct := productUseCase.NewCreateProduct(sysClock, localStorage, productRepo)
+	updateProduct := productUseCase.NewUpdateProduct(sysClock, localStorage, productRepo)
+	deleteProduct := productUseCase.NewDeleteProduct(localStorage, productRepo)
+
+	createPickupTemplateHandler := pickupHandler.NewCreatePickupTemplate(createPickupTemplate)
+	updatePickupTemplateHandler := pickupHandler.NewUpdatePickupTemplate(updatePickupTemplate)
+	deletePickupTemplateHandler := pickupHandler.NewDeletePickupTemplate(deletPickupTemplate)
+
+	createProductHandler := productHandler.NewCreateProduct(createProduct)
+	updateProductHandler := productHandler.NewUpdateProduct(updateProduct)
+	deleteProductHandler := productHandler.NewDeleteProduct(deleteProduct)
+
+	pickupTemplateRoutes := routes.NewPickupTemplateRoutes(
+		createPickupTemplateHandler,
+		updatePickupTemplateHandler,
+		deletePickupTemplateHandler,
+	)
 
 	productRoutes := routes.NewProductRoutes(
 		createProductHandler,
@@ -45,7 +63,10 @@ func start() error {
 
 	srv := server.New()
 
-	srv.AddRoutes(productRoutes)
+	srv.AddRoutes(
+		pickupTemplateRoutes,
+		productRoutes,
+	)
 
 	if err := srv.Run("8080"); err != nil {
 		return fmt.Errorf("run server: %v", err)
