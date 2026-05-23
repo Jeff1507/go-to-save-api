@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Jeff1507/go-to-save-api/internal/pkg/uuid"
 )
@@ -53,6 +54,12 @@ func (v *StringValidator) Required() *StringValidator {
 
 func (v *StringValidator) UUID() *StringValidator {
 	return v.fail(!uuid.IsValid(v.value), "deve ser um uuid")
+}
+
+func (v *StringValidator) Time() *StringValidator {
+	_, err := time.Parse("15:04", v.value)
+
+	return v.fail(err != nil, "deve estar no formato HH:MM")
 }
 
 func (v *StringValidator) Min(n int) *StringValidator {
