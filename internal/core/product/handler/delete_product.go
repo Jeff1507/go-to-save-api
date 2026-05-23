@@ -21,7 +21,6 @@ func NewDeleteProduct(uc *usecase.DeleteProduct) *DeleteProduct {
 
 func (h *DeleteProduct) Handle(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	defer r.Body.Close()
 
 	if errs := h.validate(id); errs.HasErrors() {
 		render.ValidationError(w, errs)

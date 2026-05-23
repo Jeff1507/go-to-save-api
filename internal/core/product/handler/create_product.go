@@ -34,7 +34,7 @@ func (h *CreateProduct) Handle(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	if err := r.ParseMultipartForm(5 << 20); err != nil {
-		render.Error(w, http.StatusBadRequest, "Formulário inválido")
+		render.InvalidMultipartForm(w)
 		return
 	}
 	defer r.MultipartForm.RemoveAll()
