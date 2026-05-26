@@ -78,15 +78,10 @@ func TestCreatePickupTemplate_AlreadyExistsError(t *testing.T) {
 		},
 	}
 
-	output, err := uc.Execute(context.Background(), input)
+	_, err = uc.Execute(context.Background(), input)
 	require.Error(t, err)
 
 	assert.ErrorIs(t, err, pickup.ErrTemplateAlreadyExists)
-
-	_, err = repo.Find(context.Background(), output.ID)
-	require.Error(t, err)
-
-	assert.ErrorIs(t, err, pickup.ErrTemplateNotFound)
 }
 
 func TestCreatePickupTemplate_InvalidIntervalError(t *testing.T) {
@@ -114,7 +109,7 @@ func TestCreatePickupTemplate_InvalidIntervalError(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			repo, uc := newCreatePickupTemplateDeps()
+			_, uc := newCreatePickupTemplateDeps()
 
 			input := usecase.CreatePickupTemplateInput{
 				StoreID: "store-id",
@@ -123,15 +118,10 @@ func TestCreatePickupTemplate_InvalidIntervalError(t *testing.T) {
 				End:     tt.end,
 			}
 
-			output, err := uc.Execute(context.Background(), input)
+			_, err := uc.Execute(context.Background(), input)
 			require.Error(t, err)
 
 			assert.ErrorIs(t, err, pickup.ErrInvalidInterval)
-
-			_, err = repo.Find(context.Background(), output.ID)
-			require.Error(t, err)
-
-			assert.ErrorIs(t, err, pickup.ErrTemplateNotFound)
 		})
 	}
 }

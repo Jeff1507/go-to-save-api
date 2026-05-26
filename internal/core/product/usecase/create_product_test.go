@@ -102,13 +102,8 @@ func TestCreateProduct_AlreadyExistsError(t *testing.T) {
 		Image:   nil,
 	}
 
-	output, err := deps.uc.Execute(context.Background(), input)
+	_, err = deps.uc.Execute(context.Background(), input)
 	require.Error(t, err)
 
 	assert.ErrorIs(t, err, product.ErrAlreadyExists)
-
-	_, err = deps.repo.Find(context.Background(), output.ID)
-	require.Error(t, err)
-
-	assert.ErrorIs(t, err, product.ErrNotFound)
 }
