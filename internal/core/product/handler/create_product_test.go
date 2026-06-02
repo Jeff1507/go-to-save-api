@@ -13,6 +13,7 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/core/product/repository"
 	"github.com/Jeff1507/go-to-save-api/internal/core/product/usecase"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/storage"
+	"github.com/Jeff1507/go-to-save-api/internal/infra/validation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,7 +23,8 @@ func TestCreateProduct_Success(t *testing.T) {
 	st := storage.NewFakeStorage()
 	repo := repository.NewInMemRepo()
 	uc := usecase.NewCreateProduct(clk, st, repo)
-	h := handler.NewCreateProduct(uc)
+	v := validation.NewValidator()
+	h := handler.NewCreateProduct(v, uc)
 
 	body := &bytes.Buffer{}
 	w := multipart.NewWriter(body)
@@ -83,7 +85,8 @@ func TestCreateProduct_ValidationError(t *testing.T) {
 			st := storage.NewFakeStorage()
 			repo := repository.NewInMemRepo()
 			uc := usecase.NewCreateProduct(clk, st, repo)
-			h := handler.NewCreateProduct(uc)
+			v := validation.NewValidator()
+			h := handler.NewCreateProduct(v, uc)
 
 			body := &bytes.Buffer{}
 			w := multipart.NewWriter(body)

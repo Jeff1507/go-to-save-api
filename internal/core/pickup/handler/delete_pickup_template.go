@@ -7,14 +7,20 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/infra/api/render"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/validation"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-playground/validator/v10"
 )
 
 type DeletePickupTemplate struct {
+	v  *validator.Validate
 	uc *usecase.DeletePickupTemplate
 }
 
-func NewDeletePickupTemplate(uc *usecase.DeletePickupTemplate) *DeletePickupTemplate {
+func NewDeletePickupTemplate(
+	v *validator.Validate,
+	uc *usecase.DeletePickupTemplate,
+) *DeletePickupTemplate {
 	return &DeletePickupTemplate{
+		v:  v,
 		uc: uc,
 	}
 }
@@ -22,7 +28,7 @@ func NewDeletePickupTemplate(uc *usecase.DeletePickupTemplate) *DeletePickupTemp
 func (h *DeletePickupTemplate) Handle(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	if errs := h.validate(id); errs.HasErrors() {
+	if errs := h.validateRequest(id); errs.HasErrors() {
 		render.ValidationError(w, errs)
 		return
 	}
@@ -35,12 +41,10 @@ func (h *DeletePickupTemplate) Handle(w http.ResponseWriter, r *http.Request) {
 	render.NoContent(w)
 }
 
-func (h DeletePickupTemplate) validate(id string) validation.Errors {
+func (h *DeletePickupTemplate) validateRequest(id string) validation.Errors {
 	errs := validation.NewErrors()
 
-	validation.String(errs, "id", id).
-		Required().
-		UUID()
+	validation.UUID(h.v, errs, id, "id")
 
 	return errs
 }

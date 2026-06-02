@@ -8,12 +8,13 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/core/pickup/usecase"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/api/render"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/validation"
+	"github.com/go-playground/validator/v10"
 )
 
 type CreatePickupTemplateRequestBody struct {
-	Name  string `json:"name"`
-	Start string `json:"start"`
-	End   string `json:"end"`
+	Name  string `json:"name" validate:"required,notblank,min=3,max=50"`
+	Start string `json:"start" validate:"required,time"`
+	End   string `json:"end" validate:"required,time"`
 }
 
 type CreatePickupTemplateResponseBody struct {
@@ -21,11 +22,16 @@ type CreatePickupTemplateResponseBody struct {
 }
 
 type CreatePickupTemplate struct {
+	v  *validator.Validate
 	uc *usecase.CreatePickupTemplate
 }
 
-func NewCreatePickupTemplate(uc *usecase.CreatePickupTemplate) *CreatePickupTemplate {
+func NewCreatePickupTemplate(
+	v *validator.Validate,
+	uc *usecase.CreatePickupTemplate,
+) *CreatePickupTemplate {
 	return &CreatePickupTemplate{
+		v:  v,
 		uc: uc,
 	}
 }
@@ -39,7 +45,7 @@ func (h *CreatePickupTemplate) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if errs := h.validate(body); errs.HasErrors() {
+	if errs := h.validateRequest(body); errs.HasErrors() {
 		render.ValidationError(w, errs)
 		return
 	}
@@ -91,21 +97,12 @@ func (h *CreatePickupTemplate) Handle(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h CreatePickupTemplate) validate(body CreatePickupTemplateRequestBody) validation.Errors {
+func (h *CreatePickupTemplate) validateRequest(
+	body CreatePickupTemplateRequestBody,
+) validation.Errors {
 	errs := validation.NewErrors()
 
-	validation.String(errs, "name", body.Name).
-		Required().
-		Min(3).
-		Max(50)
-
-	validation.String(errs, "start", body.Start).
-		Required().
-		Time()
-
-	validation.String(errs, "end", body.End).
-		Required().
-		Time()
+	validation.Struct(h.v, errs, body)
 
 	return errs
 }

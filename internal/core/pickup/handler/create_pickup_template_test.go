@@ -11,6 +11,7 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/core/pickup/handler"
 	"github.com/Jeff1507/go-to-save-api/internal/core/pickup/repository"
 	"github.com/Jeff1507/go-to-save-api/internal/core/pickup/usecase"
+	"github.com/Jeff1507/go-to-save-api/internal/infra/validation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,7 +19,8 @@ import (
 func TestCreatePickupTemplate_Success(t *testing.T) {
 	repo := repository.NewInMemRepo()
 	uc := usecase.NewCreatePickupTemplate(repo)
-	h := handler.NewCreatePickupTemplate(uc)
+	v := validation.NewValidator()
+	h := handler.NewCreatePickupTemplate(v, uc)
 
 	body := handler.CreatePickupTemplateRequestBody{
 		Name:  "Domingo a noite",
@@ -195,7 +197,8 @@ func TestCreatePickupTemplate_ValidationError(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			repo := repository.NewInMemRepo()
 			uc := usecase.NewCreatePickupTemplate(repo)
-			h := handler.NewCreatePickupTemplate(uc)
+			v := validation.NewValidator()
+			h := handler.NewCreatePickupTemplate(v, uc)
 
 			body := handler.CreatePickupTemplateRequestBody{
 				Name:  tt.reqBody.Name,

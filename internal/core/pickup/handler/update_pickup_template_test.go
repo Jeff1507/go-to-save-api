@@ -15,6 +15,7 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/core/pickup/handler"
 	"github.com/Jeff1507/go-to-save-api/internal/core/pickup/repository"
 	"github.com/Jeff1507/go-to-save-api/internal/core/pickup/usecase"
+	"github.com/Jeff1507/go-to-save-api/internal/infra/validation"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,7 +35,8 @@ func newUpdatePickupTemplateReq(id string, body io.Reader) *http.Request {
 func TestUpdatePickupTemplate_Success(t *testing.T) {
 	repo := repository.NewInMemRepo()
 	uc := usecase.NewUpdatePickupTemplate(repo)
-	h := handler.NewUpdatePickupTemplate(uc)
+	v := validation.NewValidator()
+	h := handler.NewUpdatePickupTemplate(v, uc)
 
 	start, err := pickup.NewTime(20, 0)
 	require.NoError(t, err)
@@ -273,7 +275,8 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			repo := repository.NewInMemRepo()
 			uc := usecase.NewUpdatePickupTemplate(repo)
-			h := handler.NewUpdatePickupTemplate(uc)
+			v := validation.NewValidator()
+			h := handler.NewUpdatePickupTemplate(v, uc)
 
 			body := handler.UpdatePickupTemplateRequestBody{
 				Name:  tt.reqBody.Name,

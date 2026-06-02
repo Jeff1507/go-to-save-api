@@ -18,6 +18,7 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/core/product/repository"
 	"github.com/Jeff1507/go-to-save-api/internal/core/product/usecase"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/storage"
+	"github.com/Jeff1507/go-to-save-api/internal/infra/validation"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -39,7 +40,8 @@ func TestUpdateProduct_Success(t *testing.T) {
 	st := storage.NewFakeStorage()
 	repo := repository.NewInMemRepo()
 	uc := usecase.NewUpdateProduct(clk, st, repo)
-	h := handler.NewUpdateProduct(uc)
+	v := validation.NewValidator()
+	h := handler.NewUpdateProduct(v, uc)
 	date := time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC)
 
 	prod, err := product.New(
@@ -139,7 +141,8 @@ func TestUpdateProduct_ValidationError(t *testing.T) {
 			st := storage.NewFakeStorage()
 			repo := repository.NewInMemRepo()
 			uc := usecase.NewUpdateProduct(clock, st, repo)
-			h := handler.NewUpdateProduct(uc)
+			v := validation.NewValidator()
+			h := handler.NewUpdateProduct(v, uc)
 
 			body := &bytes.Buffer{}
 			w := multipart.NewWriter(body)

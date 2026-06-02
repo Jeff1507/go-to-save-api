@@ -9,10 +9,11 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/infra/api/render"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/storage"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/validation"
+	"github.com/go-playground/validator/v10"
 )
 
 type CreateProductRequestBody struct {
-	Name string
+	Name string `validate:"required,notblank,min=3,max=100"`
 }
 
 type CreateProductResponseBody struct {
@@ -20,11 +21,13 @@ type CreateProductResponseBody struct {
 }
 
 type CreateProduct struct {
+	v  *validator.Validate
 	uc *usecase.CreateProduct
 }
 
-func NewCreateProduct(uc *usecase.CreateProduct) *CreateProduct {
+func NewCreateProduct(v *validator.Validate, uc *usecase.CreateProduct) *CreateProduct {
 	return &CreateProduct{
+		v:  v,
 		uc: uc,
 	}
 }
@@ -43,7 +46,7 @@ func (h *CreateProduct) Handle(w http.ResponseWriter, r *http.Request) {
 		Name: r.FormValue("name"),
 	}
 
-	if errs := h.validate(body); errs.HasErrors() {
+	if errs := h.validateRequest(body); errs.HasErrors() {
 		render.ValidationError(w, errs)
 		return
 	}
@@ -93,13 +96,10 @@ func (h *CreateProduct) Handle(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h CreateProduct) validate(body CreateProductRequestBody) validation.Errors {
+func (h *CreateProduct) validateRequest(body CreateProductRequestBody) validation.Errors {
 	errs := validation.NewErrors()
 
-	validation.String(errs, "name", body.Name).
-		Required().
-		Min(3).
-		Max(100)
+	validation.Struct(h.v, errs, body)
 
 	return errs
 }

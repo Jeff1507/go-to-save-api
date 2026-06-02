@@ -7,14 +7,17 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/infra/api/render"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/validation"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-playground/validator/v10"
 )
 
 type DeleteProduct struct {
+	v  *validator.Validate
 	uc *usecase.DeleteProduct
 }
 
-func NewDeleteProduct(uc *usecase.DeleteProduct) *DeleteProduct {
+func NewDeleteProduct(v *validator.Validate, uc *usecase.DeleteProduct) *DeleteProduct {
 	return &DeleteProduct{
+		v:  v,
 		uc: uc,
 	}
 }
@@ -22,7 +25,7 @@ func NewDeleteProduct(uc *usecase.DeleteProduct) *DeleteProduct {
 func (h *DeleteProduct) Handle(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	if errs := h.validate(id); errs.HasErrors() {
+	if errs := h.validateRequest(id); errs.HasErrors() {
 		render.ValidationError(w, errs)
 		return
 	}
@@ -35,12 +38,10 @@ func (h *DeleteProduct) Handle(w http.ResponseWriter, r *http.Request) {
 	render.NoContent(w)
 }
 
-func (h DeleteProduct) validate(id string) validation.Errors {
+func (h *DeleteProduct) validateRequest(id string) validation.Errors {
 	errs := validation.NewErrors()
 
-	validation.String(errs, "id", id).
-		Required().
-		UUID()
+	validation.UUID(h.v, errs, id, "id")
 
 	return errs
 }

@@ -10,18 +10,21 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/infra/storage"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/validation"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-playground/validator/v10"
 )
 
 type UpdateProductRequestBody struct {
-	Name string
+	Name string `validate:"required,notblank,min=3,max=100"`
 }
 
 type UpdateProduct struct {
+	v  *validator.Validate
 	uc *usecase.UpdateProduct
 }
 
-func NewUpdateProduct(uc *usecase.UpdateProduct) *UpdateProduct {
+func NewUpdateProduct(v *validator.Validate, uc *usecase.UpdateProduct) *UpdateProduct {
 	return &UpdateProduct{
+		v:  v,
 		uc: uc,
 	}
 }
@@ -42,7 +45,7 @@ func (h *UpdateProduct) Handle(w http.ResponseWriter, r *http.Request) {
 		Name: r.FormValue("name"),
 	}
 
-	if errs := h.validate(id, body); errs.HasErrors() {
+	if errs := h.validateRequest(id, body); errs.HasErrors() {
 		render.ValidationError(w, errs)
 		return
 	}
@@ -91,17 +94,15 @@ func (h *UpdateProduct) Handle(w http.ResponseWriter, r *http.Request) {
 	render.NoContent(w)
 }
 
-func (h UpdateProduct) validate(id string, body UpdateProductRequestBody) validation.Errors {
+func (h *UpdateProduct) validateRequest(
+	id string,
+	body UpdateProductRequestBody,
+) validation.Errors {
 	errs := validation.NewErrors()
 
-	validation.String(errs, "id", id).
-		Required().
-		UUID()
+	validation.UUID(h.v, errs, id, "id")
 
-	validation.String(errs, "name", body.Name).
-		Required().
-		Min(3).
-		Max(100)
+	validation.Struct(h.v, errs, body)
 
 	return errs
 }
