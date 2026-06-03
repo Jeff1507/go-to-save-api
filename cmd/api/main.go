@@ -5,6 +5,9 @@ import (
 	"log"
 
 	"github.com/Jeff1507/go-to-save-api/internal/common/clock"
+	bagHandler "github.com/Jeff1507/go-to-save-api/internal/core/bag/handler"
+	bagRepository "github.com/Jeff1507/go-to-save-api/internal/core/bag/repository"
+	bagUseCase "github.com/Jeff1507/go-to-save-api/internal/core/bag/usecase"
 	pickupHandler "github.com/Jeff1507/go-to-save-api/internal/core/pickup/handler"
 	pickupRepository "github.com/Jeff1507/go-to-save-api/internal/core/pickup/repository"
 	pickupUseCase "github.com/Jeff1507/go-to-save-api/internal/core/pickup/usecase"
@@ -14,6 +17,7 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/infra/api/routes"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/api/server"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/storage"
+	"github.com/Jeff1507/go-to-save-api/internal/infra/validation"
 )
 
 func main() {
@@ -30,9 +34,12 @@ func start() error {
 		return fmt.Errorf("new local storage: %v", err)
 	}
 
+	// Repositories
 	pickupRepo := pickupRepository.NewInMemRepo()
 	productRepo := productRepository.NewInMemRepo()
+	bagRepo := bagRepository.NewInMemRepo()
 
+	// Use Cases
 	createPickupTemplate := pickupUseCase.NewCreatePickupTemplate(pickupRepo)
 	updatePickupTemplate := pickupUseCase.NewUpdatePickupTemplate(pickupRepo)
 	deletPickupTemplate := pickupUseCase.NewDeletePickupTemplate(pickupRepo)
@@ -41,14 +48,35 @@ func start() error {
 	updateProduct := productUseCase.NewUpdateProduct(sysClock, localStorage, productRepo)
 	deleteProduct := productUseCase.NewDeleteProduct(localStorage, productRepo)
 
-	createPickupTemplateHandler := pickupHandler.NewCreatePickupTemplate(createPickupTemplate)
-	updatePickupTemplateHandler := pickupHandler.NewUpdatePickupTemplate(updatePickupTemplate)
-	deletePickupTemplateHandler := pickupHandler.NewDeletePickupTemplate(deletPickupTemplate)
+	createBag := bagUseCase.NewCreateBag(sysClock, bagRepo, productRepo)
+	updateBag := bagUseCase.NewUpdateBag(sysClock, bagRepo, productRepo)
+	closeBag := bagUseCase.NewCloseBag(sysClock, bagRepo)
 
-	createProductHandler := productHandler.NewCreateProduct(createProduct)
-	updateProductHandler := productHandler.NewUpdateProduct(updateProduct)
-	deleteProductHandler := productHandler.NewDeleteProduct(deleteProduct)
+	validator := validation.NewValidator()
 
+	// Handlers
+	createPickupTemplateHandler := pickupHandler.NewCreatePickupTemplate(
+		validator,
+		createPickupTemplate,
+	)
+	updatePickupTemplateHandler := pickupHandler.NewUpdatePickupTemplate(
+		validator,
+		updatePickupTemplate,
+	)
+	deletePickupTemplateHandler := pickupHandler.NewDeletePickupTemplate(
+		validator,
+		deletPickupTemplate,
+	)
+
+	createProductHandler := productHandler.NewCreateProduct(validator, createProduct)
+	updateProductHandler := productHandler.NewUpdateProduct(validator, updateProduct)
+	deleteProductHandler := productHandler.NewDeleteProduct(validator, deleteProduct)
+
+	createBagHandler := bagHandler.NewCreateBag(validator, createBag)
+	updateBagHandler := bagHandler.NewUpdateBag(validator, updateBag)
+	closeBagHandler := bagHandler.NewCloseBag(validator, closeBag)
+
+	// Routes
 	pickupTemplateRoutes := routes.NewPickupTemplateRoutes(
 		createPickupTemplateHandler,
 		updatePickupTemplateHandler,
@@ -61,11 +89,19 @@ func start() error {
 		deleteProductHandler,
 	)
 
-	srv := server.New()
+	bagRoutes := routes.NewBagRoutes(
+		createBagHandler,
+		updateBagHandler,
+		closeBagHandler,
+	)
+
+	// Server
+	srv := server.New([]string{"http://localhost:5173"})
 
 	srv.AddRoutes(
 		pickupTemplateRoutes,
 		productRoutes,
+		bagRoutes,
 	)
 
 	if err := srv.Run("8080"); err != nil {
