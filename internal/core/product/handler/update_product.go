@@ -14,7 +14,7 @@ import (
 )
 
 type UpdateProductRequestBody struct {
-	Name string `validate:"required,notblank,min=3,max=100"`
+	Name string `json:"name" validate:"required,notblank,min=3,max=100"`
 }
 
 type UpdateProduct struct {
