@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 )
 
 type Route interface {
@@ -16,8 +17,16 @@ type Server struct {
 	router *chi.Mux
 }
 
-func New() *Server {
+func New(allowedOrigins []string) *Server {
 	router := chi.NewRouter()
+
+	router.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   allowedOrigins,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: false,
+		MaxAge:           300,
+	}))
 
 	router.Use(middleware.RequestID)
 	router.Use(middleware.RealIP)
@@ -35,13 +44,9 @@ func New() *Server {
 }
 
 func (srv *Server) AddRoutes(routes ...Route) {
-	apiRouter := chi.NewRouter()
-
 	for _, route := range routes {
-		route.Register(apiRouter)
+		route.Register(srv.router)
 	}
-
-	srv.router.Mount("/api", apiRouter)
 }
 
 func (srv *Server) Run(port string) error {
