@@ -69,7 +69,7 @@ func (h *CreateProduct) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Pegar o storeID do ctx
-	storeID := "store-id"
+	storeID := "b875eb25-fc40-48fc-8ed1-daff245deb94"
 
 	output, err := h.uc.Execute(r.Context(), usecase.CreateProductInput{
 		StoreID: storeID,
