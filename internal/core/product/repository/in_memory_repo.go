@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"errors"
 
 	"github.com/Jeff1507/go-to-save-api/internal/core/product"
 )
@@ -17,9 +16,23 @@ func NewInMemRepo() *InMemRepo {
 	}
 }
 
+func (repo *InMemRepo) isProductExists(p *product.Product) bool {
+	for _, prod := range repo.products {
+		if prod.StoreID() == p.StoreID() && prod.Name() == p.Name() {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (repo *InMemRepo) Save(ctx context.Context, p *product.Product) error {
 	if _, ok := repo.products[p.ID()]; ok {
-		return errors.New("product already created")
+		return product.ErrAlreadyExists
+	}
+
+	if repo.isProductExists(p) {
+		return product.ErrAlreadyExists
 	}
 
 	repo.products[p.ID()] = *p
@@ -28,6 +41,10 @@ func (repo *InMemRepo) Save(ctx context.Context, p *product.Product) error {
 }
 
 func (repo *InMemRepo) Update(ctx context.Context, p *product.Product) error {
+	if repo.isProductExists(p) {
+		return product.ErrAlreadyExists
+	}
+
 	repo.products[p.ID()] = *p
 
 	return nil
@@ -37,16 +54,6 @@ func (repo *InMemRepo) Delete(ctx context.Context, id string) error {
 	delete(repo.products, id)
 
 	return nil
-}
-
-func (repo *InMemRepo) Exists(ctx context.Context, storeID, name string) (bool, error) {
-	for _, prod := range repo.products {
-		if prod.StoreID() == storeID && prod.Name() == name {
-			return true, nil
-		}
-	}
-
-	return false, nil
 }
 
 func (repo *InMemRepo) Find(ctx context.Context, id string) (*product.Product, error) {
