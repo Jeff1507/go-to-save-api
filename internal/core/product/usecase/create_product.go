@@ -51,18 +51,9 @@ func (uc *CreateProduct) Execute(
 ) (CreateProductOutput, error) {
 	now := uc.clock.Now()
 
-	exists, err := uc.productRepo.Exists(ctx, input.StoreID, input.Name)
-	if err != nil {
-		return CreateProductOutput{}, fmt.Errorf("check if product already exists: %v", err)
-	}
-
-	if exists {
-		return CreateProductOutput{}, product.ErrAlreadyExists
-	}
-
 	var imgKey string
 	if input.Image != nil {
-		imgKey, err = uc.fileStorage.Upload(
+		key, err := uc.fileStorage.Upload(
 			input.Image.Content,
 			input.Image.ContentType,
 			storage.ProductsPath,
@@ -74,6 +65,8 @@ func (uc *CreateProduct) Execute(
 
 			return CreateProductOutput{}, fmt.Errorf("upload image: %v", err)
 		}
+
+		imgKey = key
 	}
 
 	prod, err := product.New(uuid.Generate(), input.StoreID, input.Name, imgKey, now)
@@ -83,6 +76,11 @@ func (uc *CreateProduct) Execute(
 
 	if err := uc.productRepo.Save(ctx, prod); err != nil {
 		uc.fileStorage.Delete(imgKey)
+
+		if errors.Is(err, product.ErrAlreadyExists) {
+			return CreateProductOutput{}, fmt.Errorf("save product: %w", err)
+		}
+
 		return CreateProductOutput{}, fmt.Errorf("save product: %v", err)
 	}
 

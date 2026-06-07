@@ -103,19 +103,15 @@ func TestUpdateProduct_WithoutImage_Success(t *testing.T) {
 	assert.False(t, deps.st.Deleted, "delete should not be called")
 }
 
-func TestUpdateProduct_SameName_Success(t *testing.T) {
+func TestUpdateProduct_NoChanges(t *testing.T) {
 	deps := newUpdateProductDeps()
 
 	prod := createProductToUpdate(t, deps.repo)
-	oldImgKey := prod.ImageKey()
 
 	input := usecase.UpdateProductInput{
-		ID:   prod.ID(),
-		Name: prod.Name(),
-		Image: &usecase.UpdateProductImageInput{
-			Content:     strings.NewReader("fake-image-content"),
-			ContentType: ".jpg",
-		},
+		ID:    prod.ID(),
+		Name:  prod.Name(),
+		Image: nil,
 	}
 
 	err := deps.uc.Execute(context.Background(), input)
@@ -125,11 +121,9 @@ func TestUpdateProduct_SameName_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, prod.Name(), updated.Name())
-	assert.Equal(t, deps.clk.Now(), updated.UpdatedAt())
-	assert.True(t, deps.st.Uploaded, "upload should be called")
-	assert.True(t, deps.st.Deleted, "delete should be called")
-	assert.Equal(t, deps.st.UploadedKey, updated.ImageKey())
-	assert.Equal(t, deps.st.DeletedKey, oldImgKey)
+	assert.Equal(t, prod.UpdatedAt(), updated.UpdatedAt())
+	assert.False(t, deps.st.Uploaded, "upload should not be called")
+	assert.False(t, deps.st.Deleted, "delete should not be called")
 }
 
 func TestUpdateProduct_NoFoundError(t *testing.T) {
@@ -177,6 +171,4 @@ func TestUpdateProduct_AlreadyExistsError(t *testing.T) {
 	assert.Equal(t, prod.Name(), notUpdated.Name())
 	assert.Equal(t, prod.ImageKey(), notUpdated.ImageKey())
 	assert.Equal(t, prod.UpdatedAt(), notUpdated.UpdatedAt())
-	assert.False(t, deps.st.Uploaded, "upload should not be called")
-	assert.False(t, deps.st.Deleted, "delete should not be called")
 }

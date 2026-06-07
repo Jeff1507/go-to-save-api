@@ -52,23 +52,23 @@ func (uc *UpdateProduct) Execute(ctx context.Context, input UpdateProductInput) 
 		return fmt.Errorf("find product by id: %v", err)
 	}
 
-	if prod.Name() != input.Name {
-		exists, err := uc.productRepo.Exists(ctx, prod.StoreID(), input.Name)
-		if err != nil {
-			return fmt.Errorf("check if product already exists: %v", err)
-		}
+	nameChanged := prod.Name() != input.Name
+	imageChanged := input.Image != nil
 
-		if exists {
-			return product.ErrAlreadyExists
+	if !nameChanged && !imageChanged {
+		return nil
+	}
+
+	if nameChanged {
+		if err := prod.ChangeName(input.Name, now); err != nil {
+			return fmt.Errorf("change product name: %v", err)
 		}
 	}
 
-	if err := prod.ChangeName(input.Name, now); err != nil {
-		return fmt.Errorf("change product name: %v", err)
-	}
+	oldImgKey := prod.ImageKey()
 
 	var imgKey string
-	if input.Image != nil {
+	if imageChanged {
 		imgKey, err = uc.fileStorage.Upload(
 			input.Image.Content,
 			input.Image.ContentType,
@@ -81,21 +81,24 @@ func (uc *UpdateProduct) Execute(ctx context.Context, input UpdateProductInput) 
 
 			return fmt.Errorf("upload image: %v", err)
 		}
-	}
 
-	oldImgKey := prod.ImageKey()
-
-	if err := prod.ChangeImage(imgKey, now); err != nil {
-		uc.fileStorage.Delete(imgKey)
-		return fmt.Errorf("change product image: %v", err)
+		if err := prod.ChangeImage(imgKey, now); err != nil {
+			uc.fileStorage.Delete(imgKey)
+			return fmt.Errorf("change product image: %v", err)
+		}
 	}
 
 	if err := uc.productRepo.Update(ctx, prod); err != nil {
 		uc.fileStorage.Delete(imgKey)
+
+		if errors.Is(err, product.ErrAlreadyExists) {
+			return fmt.Errorf("update product: %w", err)
+		}
+
 		return fmt.Errorf("update product: %v", err)
 	}
 
-	if prod.ImageKey() != oldImgKey {
+	if imageChanged {
 		uc.fileStorage.Delete(oldImgKey)
 	}
 
