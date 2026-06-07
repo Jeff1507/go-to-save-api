@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/Jeff1507/go-to-save-api/internal/pkg/uuid"
@@ -64,7 +65,7 @@ func (ls LocalStorage) getExt(contentType string) string {
 	return ".bin"
 }
 
-func (ls LocalStorage) Upload(content io.Reader, contentType, path string) (string, error) {
+func (ls LocalStorage) Upload(content io.Reader, contentType, storagePath string) (string, error) {
 	if err := ls.validateImage(contentType); err != nil {
 		if errors.Is(err, ErrContentTypeNotAllowed) {
 			return "", fmt.Errorf("validate image: %w", err)
@@ -74,8 +75,8 @@ func (ls LocalStorage) Upload(content io.Reader, contentType, path string) (stri
 	}
 
 	filename := uuid.Generate() + ls.getExt(contentType)
-	key := filepath.Join(path, filename)
-	fullpath := filepath.Join(ls.basePath, key)
+	key := path.Join(storagePath, filename)
+	fullpath := filepath.Join(ls.basePath, storagePath, filename)
 
 	dst, err := os.Create(fullpath)
 	if err != nil {
