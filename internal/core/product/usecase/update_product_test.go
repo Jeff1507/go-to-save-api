@@ -53,8 +53,9 @@ func createProductToUpdate(t *testing.T, repo product.Repository) *product.Produ
 func TestUpdateProduct_WithImage_Success(t *testing.T) {
 	deps := newUpdateProductDeps()
 
+	now := deps.clk.Now()
+
 	prod := createProductToUpdate(t, deps.repo)
-	oldImgKey := prod.ImageKey()
 
 	input := usecase.UpdateProductInput{
 		ID:   prod.ID(),
@@ -72,15 +73,15 @@ func TestUpdateProduct_WithImage_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, input.Name, updated.Name())
-	assert.Equal(t, deps.clk.Now(), updated.UpdatedAt())
+	assert.Equal(t, now, updated.UpdatedAt())
 	assert.True(t, deps.st.Uploaded, "upload should be called")
-	assert.True(t, deps.st.Deleted, "delete should be called")
 	assert.Equal(t, deps.st.UploadedKey, updated.ImageKey())
-	assert.Equal(t, deps.st.DeletedKey, oldImgKey)
 }
 
 func TestUpdateProduct_WithoutImage_Success(t *testing.T) {
 	deps := newUpdateProductDeps()
+
+	now := deps.clk.Now()
 
 	prod := createProductToUpdate(t, deps.repo)
 
@@ -97,14 +98,16 @@ func TestUpdateProduct_WithoutImage_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, input.Name, updated.Name())
-	assert.Equal(t, deps.clk.Now(), updated.UpdatedAt())
+	assert.Equal(t, now, updated.UpdatedAt())
 	assert.Equal(t, prod.ImageKey(), updated.ImageKey())
 	assert.False(t, deps.st.Uploaded, "upload should not be called")
 	assert.False(t, deps.st.Deleted, "delete should not be called")
 }
 
-func TestUpdateProduct_NoChanges(t *testing.T) {
+func TestUpdateProduct_SameFields(t *testing.T) {
 	deps := newUpdateProductDeps()
+
+	now := deps.clk.Now()
 
 	prod := createProductToUpdate(t, deps.repo)
 
@@ -121,7 +124,7 @@ func TestUpdateProduct_NoChanges(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, prod.Name(), updated.Name())
-	assert.Equal(t, prod.UpdatedAt(), updated.UpdatedAt())
+	assert.Equal(t, now, updated.UpdatedAt())
 	assert.False(t, deps.st.Uploaded, "upload should not be called")
 	assert.False(t, deps.st.Deleted, "delete should not be called")
 }
@@ -144,7 +147,9 @@ func TestUpdateProduct_NoFoundError(t *testing.T) {
 func TestUpdateProduct_AlreadyExistsError(t *testing.T) {
 	deps := newUpdateProductDeps()
 
-	existed, err := product.New("existed-id", "store-id", "Pão de batata", "", deps.clk.Now())
+	now := deps.clk.Now()
+
+	existed, err := product.New("existed-id", "store-id", "Pão de batata", "", now)
 	require.NoError(t, err)
 
 	err = deps.repo.Save(context.Background(), existed)

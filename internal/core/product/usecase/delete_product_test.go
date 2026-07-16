@@ -8,24 +8,20 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/core/product"
 	"github.com/Jeff1507/go-to-save-api/internal/core/product/repository"
 	"github.com/Jeff1507/go-to-save-api/internal/core/product/usecase"
-	"github.com/Jeff1507/go-to-save-api/internal/infra/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 type deleteProductDeps struct {
-	st   *storage.FakeStorage
 	repo product.Repository
 	uc   *usecase.DeleteProduct
 }
 
 func newDeleteProductDeps() *deleteProductDeps {
-	st := storage.NewFakeStorage()
 	repo := repository.NewInMemRepo()
-	uc := usecase.NewDeleteProduct(st, repo)
+	uc := usecase.NewDeleteProduct(repo)
 
 	return &deleteProductDeps{
-		st:   st,
 		repo: repo,
 		uc:   uc,
 	}
@@ -44,9 +40,6 @@ func TestDeleteProduct_Success(t *testing.T) {
 	err = deps.uc.Execute(context.Background(), prod.ID())
 	require.NoError(t, err)
 
-	assert.True(t, deps.st.Deleted, "delete should be called")
-	assert.Equal(t, deps.st.DeletedKey, prod.ImageKey())
-
 	_, err = deps.repo.Find(context.Background(), prod.ID())
 	require.Error(t, err)
 
@@ -58,6 +51,4 @@ func TestDeleteProduct_NotFound_Success(t *testing.T) {
 
 	err := deps.uc.Execute(context.Background(), "not-found-id")
 	require.NoError(t, err)
-
-	assert.False(t, deps.st.Deleted, "delete should not be called")
 }

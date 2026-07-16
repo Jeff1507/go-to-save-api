@@ -52,23 +52,12 @@ func (uc *UpdateProduct) Execute(ctx context.Context, input UpdateProductInput) 
 		return fmt.Errorf("find product by id: %v", err)
 	}
 
-	nameChanged := prod.Name() != input.Name
-	imageChanged := input.Image != nil
-
-	if !nameChanged && !imageChanged {
-		return nil
+	if err := prod.ChangeName(input.Name, now); err != nil {
+		return fmt.Errorf("change product name: %v", err)
 	}
-
-	if nameChanged {
-		if err := prod.ChangeName(input.Name, now); err != nil {
-			return fmt.Errorf("change product name: %v", err)
-		}
-	}
-
-	oldImgKey := prod.ImageKey()
 
 	var imgKey string
-	if imageChanged {
+	if input.Image != nil {
 		imgKey, err = uc.fileStorage.Upload(
 			input.Image.Content,
 			input.Image.ContentType,
@@ -81,11 +70,11 @@ func (uc *UpdateProduct) Execute(ctx context.Context, input UpdateProductInput) 
 
 			return fmt.Errorf("upload image: %v", err)
 		}
+	}
 
-		if err := prod.ChangeImage(imgKey, now); err != nil {
-			uc.fileStorage.Delete(imgKey)
-			return fmt.Errorf("change product image: %v", err)
-		}
+	if err := prod.ChangeImage(imgKey, now); err != nil {
+		uc.fileStorage.Delete(imgKey)
+		return fmt.Errorf("change product image: %v", err)
 	}
 
 	if err := uc.productRepo.Update(ctx, prod); err != nil {
@@ -98,9 +87,9 @@ func (uc *UpdateProduct) Execute(ctx context.Context, input UpdateProductInput) 
 		return fmt.Errorf("update product: %v", err)
 	}
 
-	if imageChanged {
-		uc.fileStorage.Delete(oldImgKey)
-	}
+	// não deleta a imagem antiga — pode estar em uso por bags existentes
+	// (snapshot em bag_items referencia a image_key anterior)
+	// TODO: job de limpeza periódico para imagens órfãs
 
 	return nil
 }
