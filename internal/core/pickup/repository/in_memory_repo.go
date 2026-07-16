@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"errors"
 
 	"github.com/Jeff1507/go-to-save-api/internal/core/pickup"
 )
@@ -17,9 +16,27 @@ func NewInMemRepo() *InMemRepo {
 	}
 }
 
+func (repo *InMemRepo) isPickupTemplateExists(t *pickup.Template) bool {
+	for _, templ := range repo.templates {
+		if templ.ID() == t.ID() {
+			continue
+		}
+
+		if templ.StoreID() == t.StoreID() && templ.Name() == t.Name() {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (repo *InMemRepo) Save(ctx context.Context, t *pickup.Template) error {
 	if _, ok := repo.templates[t.ID()]; ok {
-		return errors.New("pickup template already created")
+		return pickup.ErrTemplateAlreadyExists
+	}
+
+	if repo.isPickupTemplateExists(t) {
+		return pickup.ErrTemplateAlreadyExists
 	}
 
 	repo.templates[t.ID()] = *t
@@ -28,6 +45,10 @@ func (repo *InMemRepo) Save(ctx context.Context, t *pickup.Template) error {
 }
 
 func (repo *InMemRepo) Update(ctx context.Context, t *pickup.Template) error {
+	if repo.isPickupTemplateExists(t) {
+		return pickup.ErrTemplateAlreadyExists
+	}
+
 	repo.templates[t.ID()] = *t
 
 	return nil
@@ -37,16 +58,6 @@ func (repo *InMemRepo) Delete(ctx context.Context, id string) error {
 	delete(repo.templates, id)
 
 	return nil
-}
-
-func (repo *InMemRepo) Exists(ctx context.Context, storeID, name string) (bool, error) {
-	for _, templ := range repo.templates {
-		if templ.StoreID() == storeID && templ.Name() == name {
-			return true, nil
-		}
-	}
-
-	return false, nil
 }
 
 func (repo *InMemRepo) Find(ctx context.Context, id string) (*pickup.Template, error) {
