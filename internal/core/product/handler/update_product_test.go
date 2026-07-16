@@ -85,51 +85,51 @@ func TestUpdateProduct_ValidationError(t *testing.T) {
 	tests := []struct {
 		name    string
 		id      string
-		reqBody handler.UpdateProductRequestBody
+		reqBody handler.UpdateProductRequest
 	}{
 		{
 			name: "empty id",
-			reqBody: handler.UpdateProductRequestBody{
+			reqBody: handler.UpdateProductRequest{
 				Name: validName,
 			},
 		},
 		{
 			name: "id with white space",
 			id:   "   ",
-			reqBody: handler.UpdateProductRequestBody{
+			reqBody: handler.UpdateProductRequest{
 				Name: validName,
 			},
 		},
 		{
 			name: "invalid id",
 			id:   "invalid-id",
-			reqBody: handler.UpdateProductRequestBody{
+			reqBody: handler.UpdateProductRequest{
 				Name: validName,
 			},
 		},
 		{
 			name:    "empty name",
 			id:      validID,
-			reqBody: handler.UpdateProductRequestBody{},
+			reqBody: handler.UpdateProductRequest{},
 		},
 		{
 			name: "name with white space",
 			id:   validID,
-			reqBody: handler.UpdateProductRequestBody{
+			reqBody: handler.UpdateProductRequest{
 				Name: "   ",
 			},
 		},
 		{
 			name: "name shorter than 3 characters",
 			id:   validID,
-			reqBody: handler.UpdateProductRequestBody{
+			reqBody: handler.UpdateProductRequest{
 				Name: "ab",
 			},
 		},
 		{
 			name: "name longer than 100 characters",
 			id:   validID,
-			reqBody: handler.UpdateProductRequestBody{
+			reqBody: handler.UpdateProductRequest{
 				Name: strings.Repeat("a", 101),
 			},
 		},

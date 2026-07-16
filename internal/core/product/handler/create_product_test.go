@@ -53,27 +53,27 @@ func TestCreateProduct_Success(t *testing.T) {
 func TestCreateProduct_ValidationError(t *testing.T) {
 	tests := []struct {
 		name    string
-		reqBody handler.CreateProductRequestBody
+		reqBody handler.CreateProductRequest
 	}{
 		{
 			name:    "empty name",
-			reqBody: handler.CreateProductRequestBody{},
+			reqBody: handler.CreateProductRequest{},
 		},
 		{
 			name: "name with white space",
-			reqBody: handler.CreateProductRequestBody{
+			reqBody: handler.CreateProductRequest{
 				Name: "   ",
 			},
 		},
 		{
 			name: "name shorter than 3 characters",
-			reqBody: handler.CreateProductRequestBody{
+			reqBody: handler.CreateProductRequest{
 				Name: "ab",
 			},
 		},
 		{
 			name: "name longer than 100 characters",
-			reqBody: handler.CreateProductRequestBody{
+			reqBody: handler.CreateProductRequest{
 				Name: strings.Repeat("a", 101),
 			},
 		},

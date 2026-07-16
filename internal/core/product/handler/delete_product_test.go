@@ -12,7 +12,6 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/core/product/handler"
 	"github.com/Jeff1507/go-to-save-api/internal/core/product/repository"
 	"github.com/Jeff1507/go-to-save-api/internal/core/product/usecase"
-	"github.com/Jeff1507/go-to-save-api/internal/infra/storage"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/validation"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
@@ -30,9 +29,8 @@ func newDeleteProductReq(id string) *http.Request {
 }
 
 func TestDeleteProduct_Success(t *testing.T) {
-	st := storage.NewFakeStorage()
 	repo := repository.NewInMemRepo()
-	uc := usecase.NewDeleteProduct(st, repo)
+	uc := usecase.NewDeleteProduct(repo)
 	v := validation.NewValidator()
 	h := handler.NewDeleteProduct(v, uc)
 	date := time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC)
@@ -77,9 +75,8 @@ func TestDeleteProduct_ValidationError(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			st := storage.NewFakeStorage()
 			repo := repository.NewInMemRepo()
-			uc := usecase.NewDeleteProduct(st, repo)
+			uc := usecase.NewDeleteProduct(repo)
 			v := validation.NewValidator()
 			h := handler.NewDeleteProduct(v, uc)
 

@@ -13,7 +13,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type UpdateProductRequestBody struct {
+type UpdateProductRequest struct {
 	Name string `json:"name" validate:"required,notblank,min=3,max=100"`
 }
 
@@ -41,7 +41,7 @@ func (h *UpdateProduct) Handle(w http.ResponseWriter, r *http.Request) {
 
 	id := chi.URLParam(r, "id")
 
-	body := UpdateProductRequestBody{
+	body := UpdateProductRequest{
 		Name: r.FormValue("name"),
 	}
 
@@ -96,7 +96,7 @@ func (h *UpdateProduct) Handle(w http.ResponseWriter, r *http.Request) {
 
 func (h *UpdateProduct) validateRequest(
 	id string,
-	body UpdateProductRequestBody,
+	body UpdateProductRequest,
 ) validation.Errors {
 	errs := validation.NewErrors()
 

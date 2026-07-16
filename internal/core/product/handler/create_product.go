@@ -12,11 +12,11 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type CreateProductRequestBody struct {
+type CreateProductRequest struct {
 	Name string `json:"name" validate:"required,notblank,min=3,max=100"`
 }
 
-type CreateProductResponseBody struct {
+type CreateProductResponse struct {
 	ID string `json:"id"`
 }
 
@@ -42,7 +42,7 @@ func (h *CreateProduct) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.MultipartForm.RemoveAll()
 
-	body := CreateProductRequestBody{
+	body := CreateProductRequest{
 		Name: r.FormValue("name"),
 	}
 
@@ -91,12 +91,12 @@ func (h *CreateProduct) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.Success(w, http.StatusCreated, CreateProductResponseBody{
+	render.Success(w, http.StatusCreated, CreateProductResponse{
 		ID: output.ID,
 	})
 }
 
-func (h *CreateProduct) validateRequest(body CreateProductRequestBody) validation.Errors {
+func (h *CreateProduct) validateRequest(body CreateProductRequest) validation.Errors {
 	errs := validation.NewErrors()
 
 	validation.Struct(h.v, errs, body)
