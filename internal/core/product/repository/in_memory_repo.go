@@ -18,6 +18,10 @@ func NewInMemRepo() *InMemRepo {
 
 func (repo *InMemRepo) isProductExists(p *product.Product) bool {
 	for _, prod := range repo.products {
+		if prod.ID() == p.ID() {
+			continue
+		}
+
 		if prod.StoreID() == p.StoreID() && prod.Name() == p.Name() {
 			return true
 		}
