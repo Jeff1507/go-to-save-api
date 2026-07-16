@@ -8,7 +8,7 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/infra/api/render"
 )
 
-type ProductResponseBody struct {
+type StoreProductResponse struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	ImageURL  *string   `json:"imageUrl"`
@@ -16,17 +16,17 @@ type ProductResponseBody struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-type ListProductsByStore struct {
-	qry *query.ListProductsByStore
+type ListStoreProducts struct {
+	qry *query.ListStoreProducts
 }
 
-func NewListProductsByStore(qry *query.ListProductsByStore) *ListProductsByStore {
-	return &ListProductsByStore{
+func NewListStoreProducts(qry *query.ListStoreProducts) *ListStoreProducts {
+	return &ListStoreProducts{
 		qry: qry,
 	}
 }
 
-func (h *ListProductsByStore) Handle(w http.ResponseWriter, r *http.Request) {
+func (h *ListStoreProducts) Handle(w http.ResponseWriter, r *http.Request) {
 	// TODO: Pegar o storeID do ctx
 	storeID := "b875eb25-fc40-48fc-8ed1-daff245deb94"
 
@@ -36,9 +36,9 @@ func (h *ListProductsByStore) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := make([]ProductResponseBody, 0, len(products))
+	res := make([]StoreProductResponse, 0, len(products))
 	for _, prod := range products {
-		res = append(res, ProductResponseBody{
+		res = append(res, StoreProductResponse{
 			ID:        prod.ID,
 			Name:      prod.Name,
 			ImageURL:  prod.ImageURL,

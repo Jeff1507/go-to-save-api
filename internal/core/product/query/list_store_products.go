@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type ProductOutput struct {
+type StoreProduct struct {
 	ID        string
 	Name      string
 	ImageURL  *string
@@ -18,22 +18,22 @@ type ProductOutput struct {
 	UpdatedAt time.Time
 }
 
-type ListProductsByStore struct {
+type ListStoreProducts struct {
 	pg          *pgxpool.Pool
 	fileStorage storage.Storage
 }
 
-func NewListProductsByStore(pg *pgxpool.Pool, fileStorage storage.Storage) *ListProductsByStore {
-	return &ListProductsByStore{
+func NewListStoreProducts(pg *pgxpool.Pool, fileStorage storage.Storage) *ListStoreProducts {
+	return &ListStoreProducts{
 		pg:          pg,
 		fileStorage: fileStorage,
 	}
 }
 
-func (qry *ListProductsByStore) Execute(
+func (qry *ListStoreProducts) Execute(
 	ctx context.Context,
 	storeID string,
-) ([]ProductOutput, error) {
+) ([]StoreProduct, error) {
 	rows, err := qry.pg.Query(
 		ctx,
 		`
@@ -49,10 +49,10 @@ func (qry *ListProductsByStore) Execute(
 	}
 	defer rows.Close()
 
-	products := make([]ProductOutput, 0)
+	products := make([]StoreProduct, 0)
 	for rows.Next() {
 		var imgKey sql.NullString
-		var p ProductOutput
+		var p StoreProduct
 		if err := rows.Scan(
 			&p.ID,
 			&p.Name,
