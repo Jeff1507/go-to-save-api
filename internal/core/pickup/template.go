@@ -56,6 +56,16 @@ func NewTemplate(id, storeID, name string, start, end Time) (*Template, error) {
 	}, nil
 }
 
+func TemplateFrom(id, storeID, name string, start, end Time) *Template {
+	return &Template{
+		id:      id,
+		storeID: storeID,
+		name:    name,
+		start:   start,
+		end:     end,
+	}
+}
+
 func (t *Template) ChangeName(name string) error {
 	if name == "" {
 		return errors.New("name is required")
