@@ -39,17 +39,6 @@ func (uc *CreatePickupTemplate) Execute(
 	ctx context.Context,
 	input CreatePickupTemplateInput,
 ) (CreatePickupTemplateOutput, error) {
-	exists, err := uc.pickupRepo.Exists(ctx, input.StoreID, input.Name)
-	if err != nil {
-		return CreatePickupTemplateOutput{}, fmt.Errorf(
-			"check if pickup template already exists: %v", err,
-		)
-	}
-
-	if exists {
-		return CreatePickupTemplateOutput{}, pickup.ErrTemplateAlreadyExists
-	}
-
 	start, err := pickup.NewTime(input.Start.Hour, input.Start.Minute)
 	if err != nil {
 		return CreatePickupTemplateOutput{}, fmt.Errorf("new start time: %v", err)
@@ -70,6 +59,10 @@ func (uc *CreatePickupTemplate) Execute(
 	}
 
 	if err := uc.pickupRepo.Save(ctx, templ); err != nil {
+		if errors.Is(err, pickup.ErrTemplateAlreadyExists) {
+			return CreatePickupTemplateOutput{}, fmt.Errorf("save pickup template: %w", err)
+		}
+
 		return CreatePickupTemplateOutput{}, fmt.Errorf("save pickup template: %v", err)
 	}
 

@@ -43,17 +43,6 @@ func (uc *UpdatePickupTemplate) Execute(
 		return fmt.Errorf("find pickup template by id: %v", err)
 	}
 
-	if templ.Name() != input.Name {
-		exists, err := uc.pickupRepo.Exists(ctx, templ.StoreID(), input.Name)
-		if err != nil {
-			return fmt.Errorf("check if pickup template already exists: %v", err)
-		}
-
-		if exists {
-			return pickup.ErrTemplateAlreadyExists
-		}
-	}
-
 	if err := templ.ChangeName(input.Name); err != nil {
 		return fmt.Errorf("change pickup template name: %v", err)
 	}
@@ -77,6 +66,10 @@ func (uc *UpdatePickupTemplate) Execute(
 	}
 
 	if err := uc.pickupRepo.Update(ctx, templ); err != nil {
+		if errors.Is(err, pickup.ErrTemplateAlreadyExists) {
+			return fmt.Errorf("update pickup template: %w", err)
+		}
+
 		return fmt.Errorf("update pickup template: %v", err)
 	}
 
