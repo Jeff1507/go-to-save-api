@@ -7,7 +7,7 @@ const (
 )
 
 type Storage interface {
-	Upload(content io.Reader, contentType, path string) (string, error)
+	Upload(content io.Reader, contentType, storagePath string) (string, error)
 	Delete(key string) error
 	URL(key string) string
 }
