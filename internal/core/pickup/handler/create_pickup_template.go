@@ -11,13 +11,13 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type CreatePickupTemplateRequestBody struct {
+type CreatePickupTemplateRequest struct {
 	Name  string `json:"name" validate:"required,notblank,min=3,max=50"`
 	Start string `json:"start" validate:"required,time"`
 	End   string `json:"end" validate:"required,time"`
 }
 
-type CreatePickupTemplateResponseBody struct {
+type CreatePickupTemplateResponse struct {
 	ID string `json:"id"`
 }
 
@@ -39,7 +39,7 @@ func NewCreatePickupTemplate(
 func (h *CreatePickupTemplate) Handle(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	var body CreatePickupTemplateRequestBody
+	var body CreatePickupTemplateRequest
 	if err := render.Bind(r, &body); err != nil {
 		render.InvalidRequestBody(w)
 		return
@@ -63,7 +63,7 @@ func (h *CreatePickupTemplate) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Pegar o storeID do ctx
-	storeID := "store-id"
+	storeID := "b875eb25-fc40-48fc-8ed1-daff245deb94"
 
 	output, err := h.uc.Execute(r.Context(), usecase.CreatePickupTemplateInput{
 		StoreID: storeID,
@@ -92,13 +92,13 @@ func (h *CreatePickupTemplate) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.Success(w, http.StatusCreated, CreatePickupTemplateResponseBody{
+	render.Success(w, http.StatusCreated, CreatePickupTemplateResponse{
 		ID: output.ID,
 	})
 }
 
 func (h *CreatePickupTemplate) validateRequest(
-	body CreatePickupTemplateRequestBody,
+	body CreatePickupTemplateRequest,
 ) validation.Errors {
 	errs := validation.NewErrors()
 

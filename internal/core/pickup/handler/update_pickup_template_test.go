@@ -56,7 +56,7 @@ func TestUpdatePickupTemplate_Success(t *testing.T) {
 	err = repo.Save(context.Background(), templ)
 	require.NoError(t, err)
 
-	body := handler.UpdatePickupTemplateRequestBody{
+	body := handler.UpdatePickupTemplateRequest{
 		Name:  "Fechamento",
 		Start: "21:00",
 		End:   "01:00",
@@ -82,11 +82,11 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 	tests := []struct {
 		name    string
 		id      string
-		reqBody handler.UpdatePickupTemplateRequestBody
+		reqBody handler.UpdatePickupTemplateRequest
 	}{
 		{
 			name: "empty id",
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  validName,
 				Start: validStart,
 				End:   validEnd,
@@ -95,7 +95,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "id with white space",
 			id:   "   ",
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  validName,
 				Start: validStart,
 				End:   validEnd,
@@ -104,7 +104,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "invalid id",
 			id:   "invalid-id",
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  validName,
 				Start: validStart,
 				End:   validEnd,
@@ -113,7 +113,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "empty name",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Start: validStart,
 				End:   validEnd,
 			},
@@ -121,7 +121,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "name with white space",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  "   ",
 				Start: validStart,
 				End:   validEnd,
@@ -130,7 +130,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "name shorter than 3 characters",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  "ab",
 				Start: validStart,
 				End:   validEnd,
@@ -139,7 +139,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "name longer than 50 characters",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  strings.Repeat("a", 51),
 				Start: validStart,
 				End:   validEnd,
@@ -148,7 +148,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "empty start time",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name: validName,
 				End:  validEnd,
 			},
@@ -156,7 +156,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "start with white space",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  validName,
 				Start: "   ",
 				End:   validEnd,
@@ -165,7 +165,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "invalid start time",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  validName,
 				Start: "xdd:xdd",
 				End:   validEnd,
@@ -174,7 +174,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "start hours greater than 23",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  validName,
 				Start: "24:00",
 				End:   validEnd,
@@ -183,7 +183,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "start hours less than 0",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  validName,
 				Start: "-00:01",
 				End:   validEnd,
@@ -192,7 +192,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "start minutes greater than 59",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  validName,
 				Start: "23:60",
 				End:   validEnd,
@@ -201,7 +201,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "start minutes less than 0",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  validName,
 				Start: "00:-01",
 				End:   validEnd,
@@ -210,7 +210,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "empty end time",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  validName,
 				Start: validStart,
 			},
@@ -218,7 +218,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "end with white space",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  validName,
 				Start: validStart,
 				End:   "   ",
@@ -227,7 +227,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "invalid end time",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  validName,
 				Start: validStart,
 				End:   "xdd:xdd",
@@ -236,7 +236,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "end hours greater than 23",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  validName,
 				Start: validStart,
 				End:   "24:00",
@@ -245,7 +245,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "end hours less than 0",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  validName,
 				Start: validStart,
 				End:   "-00:01",
@@ -254,7 +254,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "end minutes greater than 59",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  validName,
 				Start: validStart,
 				End:   "23:60",
@@ -263,7 +263,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 		{
 			name: "end minutes less than 0",
 			id:   validID,
-			reqBody: handler.UpdatePickupTemplateRequestBody{
+			reqBody: handler.UpdatePickupTemplateRequest{
 				Name:  validName,
 				Start: validStart,
 				End:   "00:-01",
@@ -278,7 +278,7 @@ func TestUpdatePickupTemplate_ValidationError(t *testing.T) {
 			v := validation.NewValidator()
 			h := handler.NewUpdatePickupTemplate(v, uc)
 
-			body := handler.UpdatePickupTemplateRequestBody{
+			body := handler.UpdatePickupTemplateRequest{
 				Name:  tt.reqBody.Name,
 				Start: tt.reqBody.Start,
 				End:   tt.reqBody.End,

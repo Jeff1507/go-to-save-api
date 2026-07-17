@@ -12,7 +12,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type UpdatePickupTemplateRequestBody struct {
+type UpdatePickupTemplateRequest struct {
 	Name  string `json:"name" validate:"required,notblank,min=3,max=50"`
 	Start string `json:"start" validate:"required,time"`
 	End   string `json:"end" validate:"required,time"`
@@ -38,7 +38,7 @@ func (h *UpdatePickupTemplate) Handle(w http.ResponseWriter, r *http.Request) {
 
 	id := chi.URLParam(r, "id")
 
-	var body UpdatePickupTemplateRequestBody
+	var body UpdatePickupTemplateRequest
 	if err := render.Bind(r, &body); err != nil {
 		render.InvalidRequestBody(w)
 		return
@@ -97,7 +97,7 @@ func (h *UpdatePickupTemplate) Handle(w http.ResponseWriter, r *http.Request) {
 
 func (h *UpdatePickupTemplate) validateRequest(
 	id string,
-	body UpdatePickupTemplateRequestBody,
+	body UpdatePickupTemplateRequest,
 ) validation.Errors {
 	errs := validation.NewErrors()
 
