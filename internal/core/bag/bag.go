@@ -2,13 +2,15 @@ package bag
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
 type Status uint8
 
 const (
-	Active Status = iota
+	Unknown Status = iota
+	Active
 	Closed
 )
 
@@ -20,6 +22,17 @@ func (s Status) String() string {
 		return "CLOSED"
 	default:
 		return "UNKNOWN"
+	}
+}
+
+func ParseStatus(str string) (Status, error) {
+	switch str {
+	case "ACTIVE":
+		return Active, nil
+	case "CLOSED":
+		return Closed, nil
+	default:
+		return Unknown, fmt.Errorf("unknown status: %q", str)
 	}
 }
 
@@ -47,8 +60,8 @@ func unique(items []Item) []Item {
 	lst := make([]Item, 0, len(items))
 
 	for _, item := range items {
-		if !seen[item.id] {
-			seen[item.id] = true
+		if !seen[item.name] {
+			seen[item.name] = true
 			lst = append(lst, item)
 		}
 	}
