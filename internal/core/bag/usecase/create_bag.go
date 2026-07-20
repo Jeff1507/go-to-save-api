@@ -18,8 +18,8 @@ type CreateBagPickupWindowInput struct {
 }
 
 type CreateBagItemInput struct {
-	ID       string
-	Quantity int32
+	ProductID string
+	Quantity  int32
 }
 
 type CreateBagInput struct {
@@ -58,7 +58,7 @@ func NewCreateBag(
 func (uc *CreateBag) Execute(ctx context.Context, input CreateBagInput) (CreateBagOutput, error) {
 	now := uc.clock.Now()
 
-	pickupWin, err := bag.NewPickupWindow(input.PickupWindow.Start, input.PickupWindow.End)
+	pickupWindow, err := bag.NewPickupWindow(input.PickupWindow.Start, input.PickupWindow.End)
 	if err != nil {
 		if errors.Is(err, bag.ErrInvalidPickupWindowInterval) {
 			return CreateBagOutput{}, fmt.Errorf("new pickup window: %w", err)
@@ -67,9 +67,13 @@ func (uc *CreateBag) Execute(ctx context.Context, input CreateBagInput) (CreateB
 		return CreateBagOutput{}, fmt.Errorf("new pickup window: %v", err)
 	}
 
+	seen := make(map[string]bool)
 	productIDs := make([]string, 0, len(input.Items))
 	for _, item := range input.Items {
-		productIDs = append(productIDs, item.ID)
+		if !seen[item.ProductID] {
+			seen[item.ProductID] = true
+			productIDs = append(productIDs, item.ProductID)
+		}
 	}
 
 	products, err := uc.productRepo.List(ctx, productIDs)
@@ -87,16 +91,16 @@ func (uc *CreateBag) Execute(ctx context.Context, input CreateBagInput) (CreateB
 		}
 	}
 
-	itemsByID := make(map[string]CreateBagItemInput, len(input.Items))
+	itemsMap := make(map[string]CreateBagItemInput, len(input.Items))
 	for _, item := range input.Items {
-		itemsByID[item.ID] = item
+		itemsMap[item.ProductID] = item
 	}
 
 	bagItems := make([]bag.Item, 0, len(products))
 	for _, prod := range products {
-		item := itemsByID[prod.ID()]
+		item := itemsMap[prod.ID()]
 
-		bagItem, err := bag.NewItem(prod.ID(), item.Quantity)
+		bagItem, err := bag.NewItem(uuid.Generate(), prod.Name(), prod.ImageKey(), item.Quantity)
 		if err != nil {
 			return CreateBagOutput{}, fmt.Errorf("new item: %v", err)
 		}
@@ -112,7 +116,7 @@ func (uc *CreateBag) Execute(ctx context.Context, input CreateBagInput) (CreateB
 		input.Stock,
 		input.OriginalPrice,
 		input.Discount,
-		pickupWin,
+		pickupWindow,
 		bagItems,
 		now,
 	)

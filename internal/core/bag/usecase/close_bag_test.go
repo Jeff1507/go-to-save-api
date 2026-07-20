@@ -42,7 +42,7 @@ func TestCloseBag_Success(t *testing.T) {
 	win, err := bag.NewPickupWindow(pickupStart, pickupEnd)
 	require.NoError(t, err)
 
-	item1, err := bag.NewItem("prod-id", 1)
+	item1, err := bag.NewItem("prod-id", "prod-name", "", 1)
 	require.NoError(t, err)
 
 	b, err := bag.New("id", "store-id", "XDD", "", 2, 100, 30, win, []bag.Item{item1}, pickupStart)

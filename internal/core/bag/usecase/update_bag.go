@@ -9,6 +9,7 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/common/clock"
 	"github.com/Jeff1507/go-to-save-api/internal/core/bag"
 	"github.com/Jeff1507/go-to-save-api/internal/core/product"
+	"github.com/Jeff1507/go-to-save-api/internal/pkg/uuid"
 )
 
 type UpdateBagPickupWindowInput struct {
@@ -17,8 +18,8 @@ type UpdateBagPickupWindowInput struct {
 }
 
 type UpdateBagItemInput struct {
-	ID       string
-	Quantity int32
+	ProductID string
+	Quantity  int32
 }
 
 type UpdateBagInput struct {
@@ -50,6 +51,7 @@ func NewUpdateBag(
 	}
 }
 
+// TODO: Revisar
 func (uc *UpdateBag) Execute(ctx context.Context, input UpdateBagInput) error {
 	now := uc.clock.Now()
 
@@ -89,7 +91,7 @@ func (uc *UpdateBag) Execute(ctx context.Context, input UpdateBagInput) error {
 		return fmt.Errorf("change bag price: %v", err)
 	}
 
-	pickupWin, err := bag.NewPickupWindow(input.PickupWindow.Start, input.PickupWindow.End)
+	pickupWindow, err := bag.NewPickupWindow(input.PickupWindow.Start, input.PickupWindow.End)
 	if err != nil {
 		if errors.Is(err, bag.ErrInvalidPickupWindowInterval) {
 			return fmt.Errorf("new pickup window: %w", err)
@@ -98,13 +100,17 @@ func (uc *UpdateBag) Execute(ctx context.Context, input UpdateBagInput) error {
 		return fmt.Errorf("new pickup window: %v", err)
 	}
 
-	if err := b.ChangePickupWindow(pickupWin, now); err != nil {
+	if err := b.ChangePickupWindow(pickupWindow, now); err != nil {
 		return fmt.Errorf("change bag pickup window: %v", err)
 	}
 
+	seen := make(map[string]bool)
 	productIDs := make([]string, 0, len(input.Items))
 	for _, item := range input.Items {
-		productIDs = append(productIDs, item.ID)
+		if !seen[item.ProductID] {
+			seen[item.ProductID] = true
+			productIDs = append(productIDs, item.ProductID)
+		}
 	}
 
 	products, err := uc.productRepo.List(ctx, productIDs)
@@ -122,16 +128,16 @@ func (uc *UpdateBag) Execute(ctx context.Context, input UpdateBagInput) error {
 		}
 	}
 
-	itemsByID := make(map[string]UpdateBagItemInput, len(input.Items))
+	itemsMap := make(map[string]UpdateBagItemInput, len(input.Items))
 	for _, item := range input.Items {
-		itemsByID[item.ID] = item
+		itemsMap[item.ProductID] = item
 	}
 
 	bagItems := make([]bag.Item, 0, len(products))
 	for _, prod := range products {
-		item := itemsByID[prod.ID()]
+		item := itemsMap[prod.ID()]
 
-		bagItem, err := bag.NewItem(prod.ID(), item.Quantity)
+		bagItem, err := bag.NewItem(uuid.Generate(), prod.Name(), prod.ImageKey(), item.Quantity)
 		if err != nil {
 			return fmt.Errorf("new item: %v", err)
 		}

@@ -85,9 +85,9 @@ func TestCreateBag_Success(t *testing.T) {
 			End:   pickupEnd,
 		},
 		Items: []usecase.CreateBagItemInput{
-			{ID: prods[0].ID(), Quantity: 3},
-			{ID: prods[1].ID(), Quantity: 1},
-			{ID: prods[2].ID(), Quantity: 2},
+			{ProductID: prods[0].ID(), Quantity: 3},
+			{ProductID: prods[1].ID(), Quantity: 1},
+			{ProductID: prods[2].ID(), Quantity: 2},
 		},
 	}
 
@@ -109,17 +109,31 @@ func TestCreateBag_Success(t *testing.T) {
 	assert.Equal(t, now, b.CreatedAt())
 	assert.Equal(t, now, b.UpdatedAt())
 
-	bagItems := make(map[string]bag.Item, len(b.Items()))
-	for _, bagItem := range b.Items() {
-		bagItems[bagItem.ID()] = bagItem
+	bagItemsByName := make(map[string]bag.Item, len(b.Items()))
+	for _, item := range b.Items() {
+		bagItemsByName[item.Name()] = item
 	}
 
 	assert.Len(t, b.Items(), len(input.Items))
-	for _, inputItem := range input.Items {
-		bagItem, ok := bagItems[inputItem.ID]
 
-		assert.True(t, ok, "item %s should be in bag", inputItem.ID)
-		assert.Equal(t, inputItem.Quantity, bagItem.Quantity())
+	for _, prod := range prods {
+		item, ok := bagItemsByName[prod.Name()]
+
+		assert.True(t, ok, "item %s should be in bag", prod.Name())
+		assert.True(t, uuid.IsValid(item.ID()))
+		assert.Equal(t, prod.Name(), item.Name())
+		assert.Equal(t, prod.ImageKey(), item.ImageKey())
+	}
+
+	inputByProductID := make(map[string]usecase.CreateBagItemInput)
+	for _, item := range input.Items {
+		inputByProductID[item.ProductID] = item
+	}
+
+	for _, prod := range prods {
+		item := bagItemsByName[prod.Name()]
+		inputItem := inputByProductID[prod.ID()]
+		assert.Equal(t, inputItem.Quantity, item.Quantity())
 	}
 }
 
@@ -143,10 +157,10 @@ func TestCreateBag_ProductNotFoundError(t *testing.T) {
 			End:   pickupEnd,
 		},
 		Items: []usecase.CreateBagItemInput{
-			{ID: prods[0].ID(), Quantity: 2},
-			{ID: prods[1].ID(), Quantity: 1},
-			{ID: prods[2].ID(), Quantity: 3},
-			{ID: "prod-4", Quantity: 2},
+			{ProductID: prods[0].ID(), Quantity: 3},
+			{ProductID: prods[1].ID(), Quantity: 1},
+			{ProductID: prods[2].ID(), Quantity: 2},
+			{ProductID: "prod-id-4", Quantity: 5},
 		},
 	}
 
@@ -187,9 +201,10 @@ func TestCreateBag_DifferentStoreProductsError(t *testing.T) {
 			End:   pickupEnd,
 		},
 		Items: []usecase.CreateBagItemInput{
-			{ID: prods[0].ID(), Quantity: 2},
-			{ID: prods[1].ID(), Quantity: 1},
-			{ID: otherProd.ID(), Quantity: 3},
+			{ProductID: prods[0].ID(), Quantity: 3},
+			{ProductID: prods[1].ID(), Quantity: 1},
+			{ProductID: prods[2].ID(), Quantity: 2},
+			{ProductID: otherProd.ID(), Quantity: 3},
 		},
 	}
 
@@ -219,8 +234,8 @@ func TestCreateBag_InvalidPickupWindowIntervalError(t *testing.T) {
 				End:   pickupEnd,
 			},
 			Items: []usecase.CreateBagItemInput{
-				{ID: prods[0].ID(), Quantity: 2},
-				{ID: prods[1].ID(), Quantity: 1},
+				{ProductID: prods[0].ID(), Quantity: 2},
+				{ProductID: prods[1].ID(), Quantity: 1},
 			},
 		}
 
@@ -249,8 +264,8 @@ func TestCreateBag_InvalidPickupWindowIntervalError(t *testing.T) {
 				End:   pickupEnd,
 			},
 			Items: []usecase.CreateBagItemInput{
-				{ID: prods[0].ID(), Quantity: 2},
-				{ID: prods[1].ID(), Quantity: 1},
+				{ProductID: prods[0].ID(), Quantity: 2},
+				{ProductID: prods[1].ID(), Quantity: 1},
 			},
 		}
 

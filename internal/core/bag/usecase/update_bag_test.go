@@ -11,6 +11,7 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/core/bag/usecase"
 	"github.com/Jeff1507/go-to-save-api/internal/core/product"
 	productRepository "github.com/Jeff1507/go-to-save-api/internal/core/product/repository"
+	"github.com/Jeff1507/go-to-save-api/internal/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -47,7 +48,7 @@ func createBagToUpdate(
 
 	date := time.Date(2024, time.April, 1, 0, 0, 0, 0, time.UTC)
 
-	prod, err := product.New("prod-id", "store-id", "Coxinha", "coxinha.png", date)
+	prod, err := product.New("prod-id-abc", "store-id", "Bolo de morango", "bolo.png", date)
 	require.NoError(t, err)
 
 	err = productRepo.Save(context.Background(), prod)
@@ -56,7 +57,7 @@ func createBagToUpdate(
 	win, err := bag.NewPickupWindow(pickupStart, pickupEnd)
 	require.NoError(t, err)
 
-	item, err := bag.NewItem(prod.ID(), 2)
+	item, err := bag.NewItem("item-id", prod.Name(), prod.ImageKey(), 2)
 	require.NoError(t, err)
 
 	b, err := bag.New("id", "store-id", "XDD", "", 1, 500, 50, win, []bag.Item{item}, pickupStart)
@@ -101,6 +102,32 @@ func makeBagToUpdate(
 	return b
 }
 
+func createProductsToUpdateBag(t *testing.T, productRepo product.Repository) []*product.Product {
+	t.Helper()
+
+	date := time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC)
+
+	prod1, err := product.New("prod-1", "store-id", "Coxinha", "coxinha.png", date)
+	require.NoError(t, err)
+
+	err = productRepo.Save(context.Background(), prod1)
+	require.NoError(t, err)
+
+	prod2, err := product.New("prod-2", "store-id", "Croissant", "croissant.png", date)
+	require.NoError(t, err)
+
+	err = productRepo.Save(context.Background(), prod2)
+	require.NoError(t, err)
+
+	prod3, err := product.New("prod-3", "store-id", "Pão de batata", "", date)
+	require.NoError(t, err)
+
+	err = productRepo.Save(context.Background(), prod3)
+	require.NoError(t, err)
+
+	return []*product.Product{prod1, prod2, prod3}
+}
+
 func TestUpdateBag_Success(t *testing.T) {
 	deps := newUpdateBagDeps()
 
@@ -110,6 +137,7 @@ func TestUpdateBag_Success(t *testing.T) {
 	pickupEnd := pickupStart.Add(time.Hour)
 
 	b := createBagToUpdate(t, deps.productRepo, deps.bagRepo, pickupStart, pickupEnd)
+	prods := createProductsToUpdateBag(t, deps.productRepo)
 
 	input := usecase.UpdateBagInput{
 		ID:            b.ID(),
@@ -123,7 +151,9 @@ func TestUpdateBag_Success(t *testing.T) {
 			End:   pickupEnd,
 		},
 		Items: []usecase.UpdateBagItemInput{
-			{ID: b.Items()[0].ID(), Quantity: 1},
+			{ProductID: prods[0].ID(), Quantity: 1},
+			{ProductID: prods[1].ID(), Quantity: 2},
+			{ProductID: prods[2].ID(), Quantity: 1},
 		},
 	}
 
@@ -142,17 +172,31 @@ func TestUpdateBag_Success(t *testing.T) {
 	assert.Equal(t, input.PickupWindow.End, updated.PickupWindow().End())
 	assert.Equal(t, now, updated.UpdatedAt())
 
-	bagItems := make(map[string]bag.Item, len(updated.Items()))
-	for _, bagItem := range updated.Items() {
-		bagItems[bagItem.ID()] = bagItem
+	bagItemsByName := make(map[string]bag.Item, len(updated.Items()))
+	for _, item := range updated.Items() {
+		bagItemsByName[item.Name()] = item
 	}
 
 	assert.Len(t, updated.Items(), len(input.Items))
-	for _, inputItem := range input.Items {
-		bagItem, ok := bagItems[inputItem.ID]
 
-		assert.True(t, ok, "item %s should be in bag", inputItem.ID)
-		assert.Equal(t, inputItem.Quantity, bagItem.Quantity())
+	for _, prod := range prods {
+		item, ok := bagItemsByName[prod.Name()]
+
+		assert.True(t, ok, "item %s should be in bag", prod.Name())
+		assert.True(t, uuid.IsValid(item.ID()))
+		assert.Equal(t, prod.Name(), item.Name())
+		assert.Equal(t, prod.ImageKey(), item.ImageKey())
+	}
+
+	inputByProductID := make(map[string]usecase.UpdateBagItemInput)
+	for _, item := range input.Items {
+		inputByProductID[item.ProductID] = item
+	}
+
+	for _, prod := range prods {
+		item := bagItemsByName[prod.Name()]
+		inputItem := inputByProductID[prod.ID()]
+		assert.Equal(t, inputItem.Quantity, item.Quantity())
 	}
 }
 
@@ -160,6 +204,8 @@ func TestUpdateBag_NotFoundError(t *testing.T) {
 	deps := newUpdateBagDeps()
 
 	now := deps.clk.Now()
+
+	prods := createProductsToUpdateBag(t, deps.productRepo)
 
 	input := usecase.UpdateBagInput{
 		ID:            "not-found-id",
@@ -172,7 +218,9 @@ func TestUpdateBag_NotFoundError(t *testing.T) {
 			End:   now.Add(time.Hour),
 		},
 		Items: []usecase.UpdateBagItemInput{
-			{ID: "prod-id", Quantity: 1},
+			{ProductID: prods[0].ID(), Quantity: 1},
+			{ProductID: prods[1].ID(), Quantity: 2},
+			{ProductID: prods[2].ID(), Quantity: 1},
 		},
 	}
 
@@ -191,6 +239,7 @@ func TestUpdateBag_IsClosedError(t *testing.T) {
 	pickupEnd := pickupStart.Add(time.Hour * 6)
 
 	b := makeBagToUpdate(t, bag.Closed, deps.bagRepo, pickupStart, pickupEnd)
+	prods := createProductsToUpdateBag(t, deps.productRepo)
 
 	input := usecase.UpdateBagInput{
 		ID:            b.ID(),
@@ -203,7 +252,9 @@ func TestUpdateBag_IsClosedError(t *testing.T) {
 			End:   pickupEnd,
 		},
 		Items: []usecase.UpdateBagItemInput{
-			{ID: "prod-id", Quantity: 1},
+			{ProductID: prods[0].ID(), Quantity: 1},
+			{ProductID: prods[1].ID(), Quantity: 2},
+			{ProductID: prods[2].ID(), Quantity: 1},
 		},
 	}
 
@@ -235,6 +286,7 @@ func TestUpdateBag_IsExpiredError(t *testing.T) {
 	pickupEnd := pickupStart.Add(time.Hour * 6)
 
 	b := makeBagToUpdate(t, bag.Active, deps.bagRepo, pickupStart, pickupEnd)
+	prods := createProductsToUpdateBag(t, deps.productRepo)
 
 	input := usecase.UpdateBagInput{
 		ID:            b.ID(),
@@ -247,7 +299,9 @@ func TestUpdateBag_IsExpiredError(t *testing.T) {
 			End:   pickupEnd,
 		},
 		Items: []usecase.UpdateBagItemInput{
-			{ID: "prod-id", Quantity: 1},
+			{ProductID: prods[0].ID(), Quantity: 1},
+			{ProductID: prods[1].ID(), Quantity: 2},
+			{ProductID: prods[2].ID(), Quantity: 1},
 		},
 	}
 
@@ -279,6 +333,7 @@ func TestUpdateBag_ProductNotFoundError(t *testing.T) {
 	pickupEnd := pickupStart.Add(time.Hour)
 
 	b := createBagToUpdate(t, deps.productRepo, deps.bagRepo, pickupStart, pickupEnd)
+	prods := createProductsToUpdateBag(t, deps.productRepo)
 
 	input := usecase.UpdateBagInput{
 		ID:            b.ID(),
@@ -291,8 +346,10 @@ func TestUpdateBag_ProductNotFoundError(t *testing.T) {
 			End:   pickupEnd,
 		},
 		Items: []usecase.UpdateBagItemInput{
-			{ID: b.Items()[0].ID(), Quantity: 1},
-			{ID: "not-found-id", Quantity: 1},
+			{ProductID: prods[0].ID(), Quantity: 1},
+			{ProductID: prods[1].ID(), Quantity: 2},
+			{ProductID: prods[2].ID(), Quantity: 3},
+			{ProductID: "prod-id-4", Quantity: 1},
 		},
 	}
 
@@ -336,6 +393,7 @@ func TestUpdateBag_DifferentStoreProductsError(t *testing.T) {
 	require.NoError(t, err)
 
 	b := createBagToUpdate(t, deps.productRepo, deps.bagRepo, pickupStart, pickupEnd)
+	prods := createProductsToUpdateBag(t, deps.productRepo)
 
 	input := usecase.UpdateBagInput{
 		ID:            b.ID(),
@@ -348,8 +406,10 @@ func TestUpdateBag_DifferentStoreProductsError(t *testing.T) {
 			End:   pickupEnd,
 		},
 		Items: []usecase.UpdateBagItemInput{
-			{ID: b.Items()[0].ID(), Quantity: 1},
-			{ID: otherProd.ID(), Quantity: 1},
+			{ProductID: prods[0].ID(), Quantity: 1},
+			{ProductID: prods[1].ID(), Quantity: 2},
+			{ProductID: prods[2].ID(), Quantity: 3},
+			{ProductID: otherProd.ID(), Quantity: 1},
 		},
 	}
 
@@ -382,6 +442,7 @@ func TestUpdateBag_InvalidPickupIntervalError(t *testing.T) {
 		pickupEnd := pickupStart.Add(time.Hour)
 
 		b := createBagToUpdate(t, deps.productRepo, deps.bagRepo, pickupStart, pickupEnd)
+		prods := createProductsToUpdateBag(t, deps.productRepo)
 
 		input := usecase.UpdateBagInput{
 			ID:            b.ID(),
@@ -394,7 +455,8 @@ func TestUpdateBag_InvalidPickupIntervalError(t *testing.T) {
 				End:   pickupStart.Add(time.Minute * 29),
 			},
 			Items: []usecase.UpdateBagItemInput{
-				{ID: b.Items()[0].ID(), Quantity: 1},
+				{ProductID: prods[0].ID(), Quantity: 1},
+				{ProductID: prods[1].ID(), Quantity: 2},
 			},
 		}
 
@@ -426,6 +488,7 @@ func TestUpdateBag_InvalidPickupIntervalError(t *testing.T) {
 		pickupEnd := pickupStart.Add(time.Hour)
 
 		b := createBagToUpdate(t, deps.productRepo, deps.bagRepo, pickupStart, pickupEnd)
+		prods := createProductsToUpdateBag(t, deps.productRepo)
 
 		input := usecase.UpdateBagInput{
 			ID:            b.ID(),
@@ -438,7 +501,8 @@ func TestUpdateBag_InvalidPickupIntervalError(t *testing.T) {
 				End:   pickupStart.Add(time.Hour*6 + time.Minute),
 			},
 			Items: []usecase.UpdateBagItemInput{
-				{ID: b.Items()[0].ID(), Quantity: 1},
+				{ProductID: prods[0].ID(), Quantity: 1},
+				{ProductID: prods[1].ID(), Quantity: 2},
 			},
 		}
 
