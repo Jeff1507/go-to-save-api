@@ -13,27 +13,27 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type CreateBagItemRequestBody struct {
-	ID       string `json:"id" validate:"required,uuid"`
-	Quantity int32  `json:"quantity" validate:"required,gt=0"`
+type CreateBagItemRequest struct {
+	ProductID string `json:"productId" validate:"required,uuid"`
+	Quantity  int32  `json:"quantity" validate:"required,gt=0"`
 }
 
-type CreateBagPickupWindowRequestBody struct {
+type CreateBagPickupWindowRequest struct {
 	Start time.Time `json:"start" validate:"required"`
 	End   time.Time `json:"end" validate:"required,gtfield=Start"`
 }
 
-type CreateBagRequestBody struct {
-	Title         string                           `json:"title" validate:"required,notblank,min=3,max=50"`
-	Description   string                           `json:"description" validate:"omitempty,notblank,max=255"`
-	Stock         int32                            `json:"stock" validate:"required,gt=0"`
-	OriginalPrice int64                            `json:"originalPrice" validate:"required,gt=0"`
-	Discount      int                              `json:"discount" validate:"required,gte=30,lte=90"`
-	Items         []CreateBagItemRequestBody       `json:"items" validate:"required,min=1,dive"`
-	PickupWindow  CreateBagPickupWindowRequestBody `json:"pickupWindow" validate:"required"`
+type CreateBagRequest struct {
+	Title         string                       `json:"title" validate:"required,notblank,min=3,max=50"`
+	Description   string                       `json:"description" validate:"omitempty,notblank,max=255"`
+	Stock         int32                        `json:"stock" validate:"required,gt=0"`
+	OriginalPrice int64                        `json:"originalPrice" validate:"required,gt=0"`
+	Discount      int                          `json:"discount" validate:"required,gte=30,lte=90"`
+	PickupWindow  CreateBagPickupWindowRequest `json:"pickupWindow" validate:"required"`
+	Items         []CreateBagItemRequest       `json:"items" validate:"required,min=1,dive"`
 }
 
-type CreateBagResponseBody struct {
+type CreateBagResponse struct {
 	ID string `json:"id"`
 }
 
@@ -52,7 +52,7 @@ func NewCreateBag(v *validator.Validate, uc *usecase.CreateBag) *CreateBag {
 func (h *CreateBag) Handle(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	var body CreateBagRequestBody
+	var body CreateBagRequest
 	if err := render.Bind(r, &body); err != nil {
 		render.InvalidRequestBody(w)
 		return
@@ -64,13 +64,18 @@ func (h *CreateBag) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Pegar o storeID do ctx
-	storeID := "store-id"
+	storeID := "b875eb25-fc40-48fc-8ed1-daff245deb94"
 
-	inputItems := make([]usecase.CreateBagItemInput, 0, len(body.Items))
+	pickupWindow := usecase.CreateBagPickupWindowInput{
+		Start: body.PickupWindow.Start,
+		End:   body.PickupWindow.End,
+	}
+
+	items := make([]usecase.CreateBagItemInput, 0, len(body.Items))
 	for _, item := range body.Items {
-		inputItems = append(inputItems, usecase.CreateBagItemInput{
-			ID:       item.ID,
-			Quantity: item.Quantity,
+		items = append(items, usecase.CreateBagItemInput{
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
 		})
 	}
 
@@ -81,11 +86,8 @@ func (h *CreateBag) Handle(w http.ResponseWriter, r *http.Request) {
 		Stock:         body.Stock,
 		OriginalPrice: body.OriginalPrice,
 		Discount:      body.Discount,
-		Items:         inputItems,
-		PickupWindow: usecase.CreateBagPickupWindowInput{
-			Start: body.PickupWindow.Start,
-			End:   body.PickupWindow.End,
-		},
+		PickupWindow:  pickupWindow,
+		Items:         items,
 	})
 	if err != nil {
 		if errors.Is(err, bag.ErrInvalidPickupWindowInterval) {
@@ -102,12 +104,12 @@ func (h *CreateBag) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.Success(w, http.StatusCreated, CreateBagResponseBody{
+	render.Success(w, http.StatusCreated, CreateBagResponse{
 		ID: output.ID,
 	})
 }
 
-func (h *CreateBag) validateRequest(body CreateBagRequestBody) validation.Errors {
+func (h *CreateBag) validateRequest(body CreateBagRequest) validation.Errors {
 	errs := validation.NewErrors()
 
 	validation.Struct(h.v, errs, body)

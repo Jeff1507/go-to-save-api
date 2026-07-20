@@ -31,9 +31,12 @@ func TestCreateBag_Success(t *testing.T) {
 
 	now := clk.Now()
 
+	// TODO: Pegar o storeID do ctx
+	storeID := "b875eb25-fc40-48fc-8ed1-daff245deb94"
+
 	prod, err := product.New(
 		"a3f8c2d1-1234-4abc-89ef-123456789abc",
-		"store-id",
+		storeID,
 		"Coxinha",
 		"coxinha.png",
 		now,
@@ -46,18 +49,18 @@ func TestCreateBag_Success(t *testing.T) {
 	pickupStart := now.Add(time.Hour * 12)
 	pickupEnd := pickupStart.Add(time.Hour)
 
-	body := handler.CreateBagRequestBody{
+	body := handler.CreateBagRequest{
 		Title:         "Sacola mista",
 		Description:   "Sacola com doces e salgados",
 		Stock:         1,
 		OriginalPrice: 1000,
 		Discount:      50,
-		PickupWindow: handler.CreateBagPickupWindowRequestBody{
+		PickupWindow: handler.CreateBagPickupWindowRequest{
 			Start: pickupStart,
 			End:   pickupEnd,
 		},
-		Items: []handler.CreateBagItemRequestBody{
-			{ID: prod.ID(), Quantity: 2},
+		Items: []handler.CreateBagItemRequest{
+			{ProductID: prod.ID(), Quantity: 2},
 		},
 	}
 
@@ -79,16 +82,16 @@ func TestCreateBag_ValidationError(t *testing.T) {
 
 	now := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	validBody := handler.CreateBagRequestBody{
+	validBody := handler.CreateBagRequest{
 		Title:         "Sacola teste",
 		Description:   "",
 		Stock:         10,
 		OriginalPrice: 100,
 		Discount:      30,
-		Items: []handler.CreateBagItemRequestBody{
-			{ID: "550e8400-e29b-41d4-a716-446655440000", Quantity: 1},
+		Items: []handler.CreateBagItemRequest{
+			{ProductID: "550e8400-e29b-41d4-a716-446655440000", Quantity: 1},
 		},
-		PickupWindow: handler.CreateBagPickupWindowRequestBody{
+		PickupWindow: handler.CreateBagPickupWindowRequest{
 			Start: now,
 			End:   now.Add(time.Hour),
 		},
@@ -96,7 +99,7 @@ func TestCreateBag_ValidationError(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		body   handler.CreateBagRequestBody
+		body   handler.CreateBagRequest
 		fields []string
 	}{
 		{
@@ -106,7 +109,7 @@ func TestCreateBag_ValidationError(t *testing.T) {
 		},
 		{
 			name: "empty title",
-			body: func() handler.CreateBagRequestBody {
+			body: func() handler.CreateBagRequest {
 				b := validBody
 				b.Title = ""
 				return b
@@ -115,7 +118,7 @@ func TestCreateBag_ValidationError(t *testing.T) {
 		},
 		{
 			name: "title with white space",
-			body: func() handler.CreateBagRequestBody {
+			body: func() handler.CreateBagRequest {
 				b := validBody
 				b.Title = "   "
 				return b
@@ -124,7 +127,7 @@ func TestCreateBag_ValidationError(t *testing.T) {
 		},
 		{
 			name: "title shorter than 3 characters",
-			body: func() handler.CreateBagRequestBody {
+			body: func() handler.CreateBagRequest {
 				b := validBody
 				b.Title = "ab"
 				return b
@@ -133,7 +136,7 @@ func TestCreateBag_ValidationError(t *testing.T) {
 		},
 		{
 			name: "title longer than 50 characters",
-			body: func() handler.CreateBagRequestBody {
+			body: func() handler.CreateBagRequest {
 				b := validBody
 				b.Title = strings.Repeat("a", 51)
 				return b
@@ -142,7 +145,7 @@ func TestCreateBag_ValidationError(t *testing.T) {
 		},
 		{
 			name: "description longer than 255 characters",
-			body: func() handler.CreateBagRequestBody {
+			body: func() handler.CreateBagRequest {
 				b := validBody
 				b.Description = strings.Repeat("a", 256)
 				return b
@@ -151,7 +154,7 @@ func TestCreateBag_ValidationError(t *testing.T) {
 		},
 		{
 			name: "stock equal to 0",
-			body: func() handler.CreateBagRequestBody {
+			body: func() handler.CreateBagRequest {
 				b := validBody
 				b.Stock = 0
 				return b
@@ -160,7 +163,7 @@ func TestCreateBag_ValidationError(t *testing.T) {
 		},
 		{
 			name: "negative stock",
-			body: func() handler.CreateBagRequestBody {
+			body: func() handler.CreateBagRequest {
 				b := validBody
 				b.Stock = -1
 				return b
@@ -169,7 +172,7 @@ func TestCreateBag_ValidationError(t *testing.T) {
 		},
 		{
 			name: "originalPrice equal to 0",
-			body: func() handler.CreateBagRequestBody {
+			body: func() handler.CreateBagRequest {
 				b := validBody
 				b.OriginalPrice = 0
 				return b
@@ -178,7 +181,7 @@ func TestCreateBag_ValidationError(t *testing.T) {
 		},
 		{
 			name: "negative originalPrice",
-			body: func() handler.CreateBagRequestBody {
+			body: func() handler.CreateBagRequest {
 				b := validBody
 				b.OriginalPrice = -1
 				return b
@@ -187,7 +190,7 @@ func TestCreateBag_ValidationError(t *testing.T) {
 		},
 		{
 			name: "discount less than 30",
-			body: func() handler.CreateBagRequestBody {
+			body: func() handler.CreateBagRequest {
 				b := validBody
 				b.Discount = 29
 				return b
@@ -196,7 +199,7 @@ func TestCreateBag_ValidationError(t *testing.T) {
 		},
 		{
 			name: "discount greater than 90",
-			body: func() handler.CreateBagRequestBody {
+			body: func() handler.CreateBagRequest {
 				b := validBody
 				b.Discount = 91
 				return b
@@ -205,9 +208,9 @@ func TestCreateBag_ValidationError(t *testing.T) {
 		},
 		{
 			name: "item with empty uuid",
-			body: func() handler.CreateBagRequestBody {
+			body: func() handler.CreateBagRequest {
 				b := validBody
-				b.Items = []handler.CreateBagItemRequestBody{
+				b.Items = []handler.CreateBagItemRequest{
 					{Quantity: 1},
 				}
 				return b
@@ -216,10 +219,10 @@ func TestCreateBag_ValidationError(t *testing.T) {
 		},
 		{
 			name: "item with white space uuid",
-			body: func() handler.CreateBagRequestBody {
+			body: func() handler.CreateBagRequest {
 				b := validBody
-				b.Items = []handler.CreateBagItemRequestBody{
-					{ID: "   ", Quantity: 1},
+				b.Items = []handler.CreateBagItemRequest{
+					{ProductID: "   ", Quantity: 1},
 				}
 				return b
 			}(),
@@ -227,10 +230,10 @@ func TestCreateBag_ValidationError(t *testing.T) {
 		},
 		{
 			name: "item with invalid uuid",
-			body: func() handler.CreateBagRequestBody {
+			body: func() handler.CreateBagRequest {
 				b := validBody
-				b.Items = []handler.CreateBagItemRequestBody{
-					{ID: "invalid-id", Quantity: 1},
+				b.Items = []handler.CreateBagItemRequest{
+					{ProductID: "invalid-id", Quantity: 1},
 				}
 				return b
 			}(),
@@ -238,10 +241,10 @@ func TestCreateBag_ValidationError(t *testing.T) {
 		},
 		{
 			name: "item with negative quantity",
-			body: func() handler.CreateBagRequestBody {
+			body: func() handler.CreateBagRequest {
 				b := validBody
-				b.Items = []handler.CreateBagItemRequestBody{
-					{ID: "550e8400-e29b-41d4-a716-446655440000", Quantity: -1},
+				b.Items = []handler.CreateBagItemRequest{
+					{ProductID: "550e8400-e29b-41d4-a716-446655440000", Quantity: -1},
 				}
 				return b
 			}(),
@@ -249,10 +252,10 @@ func TestCreateBag_ValidationError(t *testing.T) {
 		},
 		{
 			name: "item with quantity equal to 0",
-			body: func() handler.CreateBagRequestBody {
+			body: func() handler.CreateBagRequest {
 				b := validBody
-				b.Items = []handler.CreateBagItemRequestBody{
-					{ID: "550e8400-e29b-41d4-a716-446655440000", Quantity: 0},
+				b.Items = []handler.CreateBagItemRequest{
+					{ProductID: "550e8400-e29b-41d4-a716-446655440000", Quantity: 0},
 				}
 				return b
 			}(),
@@ -260,7 +263,7 @@ func TestCreateBag_ValidationError(t *testing.T) {
 		},
 		{
 			name: "end before start",
-			body: func() handler.CreateBagRequestBody {
+			body: func() handler.CreateBagRequest {
 				b := validBody
 				b.PickupWindow.End = now.Add(-time.Hour)
 				return b
