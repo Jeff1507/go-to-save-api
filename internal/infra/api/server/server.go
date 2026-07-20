@@ -17,7 +17,7 @@ type Server struct {
 	router *chi.Mux
 }
 
-func New(allowedOrigins []string) *Server {
+func New(allowedOrigins []string, filesDir string) *Server {
 	router := chi.NewRouter()
 
 	router.Use(cors.Handler(cors.Options{
@@ -32,6 +32,11 @@ func New(allowedOrigins []string) *Server {
 	router.Use(middleware.RealIP)
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
+
+	router.Handle("/uploads/*", http.StripPrefix(
+		"/uploads/",
+		http.FileServer(http.Dir(filesDir)),
+	))
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
