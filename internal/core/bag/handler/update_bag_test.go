@@ -20,6 +20,7 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/core/product"
 	productRepository "github.com/Jeff1507/go-to-save-api/internal/core/product/repository"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/validation"
+	"github.com/Jeff1507/go-to-save-api/internal/pkg/uuid"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,7 +43,7 @@ func createBagToUpdate(
 	bagRepo bag.Repository,
 	pickupStart time.Time,
 	pickupEnd time.Time,
-) *bag.Bag {
+) (*bag.Bag, *product.Product) {
 	t.Helper()
 
 	date := time.Date(2024, time.April, 1, 0, 0, 0, 0, time.UTC)
@@ -62,7 +63,7 @@ func createBagToUpdate(
 	win, err := bag.NewPickupWindow(pickupStart, pickupEnd)
 	require.NoError(t, err)
 
-	item, err := bag.NewItem(prod.ID(), 2)
+	item, err := bag.NewItem(uuid.Generate(), prod.Name(), prod.ImageKey(), 3)
 	require.NoError(t, err)
 
 	b, err := bag.New(
@@ -79,7 +80,7 @@ func createBagToUpdate(
 	err = bagRepo.Save(context.Background(), b)
 	require.NoError(t, err)
 
-	return b
+	return b, prod
 }
 
 func TestUpdateBag_Success(t *testing.T) {
@@ -95,20 +96,20 @@ func TestUpdateBag_Success(t *testing.T) {
 	pickupStart := now.Add(time.Hour * 24)
 	pickupEnd := pickupStart.Add(time.Hour)
 
-	b := createBagToUpdate(t, productRepo, bagRepo, pickupStart, pickupEnd)
+	b, prod := createBagToUpdate(t, productRepo, bagRepo, pickupStart, pickupEnd)
 
-	body := handler.UpdateBagRequestBody{
+	body := handler.UpdateBagRequest{
 		Title:         "Sacola editada",
 		Description:   "descrição editada...",
 		Stock:         3,
 		OriginalPrice: 1000,
 		Discount:      40,
-		PickupWindow: handler.UpdateBagPickupWindowRequestBody{
+		PickupWindow: handler.UpdateBagPickupWindowRequest{
 			Start: pickupStart,
 			End:   pickupEnd,
 		},
-		Items: []handler.UpdateBagItemRequestBody{
-			{ID: b.Items()[0].ID(), Quantity: 2},
+		Items: []handler.UpdateBagItemRequest{
+			{ProductID: prod.ID(), Quantity: 5},
 		},
 	}
 
@@ -124,236 +125,236 @@ func TestUpdateBag_Success(t *testing.T) {
 }
 
 func TestUpdateBag_ValidationError(t *testing.T) {
+	v := validation.NewValidator()
+
 	now := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	validID := "a3f8c2d1-1234-4abc-89ef-123456789abc"
 
-	validBody := handler.UpdateBagRequestBody{
+	validBody := handler.UpdateBagRequest{
 		Title:         "Sacola editada",
 		Description:   "descrição editada...",
 		Stock:         3,
 		OriginalPrice: 1000,
 		Discount:      40,
-		PickupWindow: handler.UpdateBagPickupWindowRequestBody{
+		PickupWindow: handler.UpdateBagPickupWindowRequest{
 			Start: now,
 			End:   now.Add(time.Hour),
 		},
-		Items: []handler.UpdateBagItemRequestBody{
-			{ID: "550e8400-e29b-41d4-a716-446655440000", Quantity: 2},
+		Items: []handler.UpdateBagItemRequest{
+			{ProductID: "550e8400-e29b-41d4-a716-446655440000", Quantity: 5},
 		},
 	}
 
 	tests := []struct {
-		name    string
-		id      string
-		reqBody handler.UpdateBagRequestBody
+		name   string
+		id     string
+		body   handler.UpdateBagRequest
+		fields []string
 	}{
 		{
-			name:    "empty id",
-			reqBody: validBody,
+			name:   "valid request",
+			id:     validID,
+			body:   validBody,
+			fields: nil,
 		},
 		{
-			name:    "id with white space",
-			id:      "   ",
-			reqBody: validBody,
+			name:   "empty id",
+			id:     "",
+			body:   validBody,
+			fields: []string{"id"},
 		},
 		{
-			name:    "invalid id",
-			id:      "invalid-id",
-			reqBody: validBody,
+			name:   "invalid id",
+			id:     "invalid-id",
+			body:   validBody,
+			fields: []string{"id"},
 		},
 		{
 			name: "empty title",
 			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
+			body: func() handler.UpdateBagRequest {
 				b := validBody
 				b.Title = ""
 				return b
 			}(),
+			fields: []string{"title"},
 		},
 		{
 			name: "title with white space",
 			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
+			body: func() handler.UpdateBagRequest {
 				b := validBody
 				b.Title = "   "
 				return b
 			}(),
+			fields: []string{"title"},
 		},
 		{
 			name: "title shorter than 3 characters",
 			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
+			body: func() handler.UpdateBagRequest {
 				b := validBody
 				b.Title = "ab"
 				return b
 			}(),
+			fields: []string{"title"},
 		},
 		{
 			name: "title longer than 50 characters",
 			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
+			body: func() handler.UpdateBagRequest {
 				b := validBody
 				b.Title = strings.Repeat("a", 51)
 				return b
 			}(),
+			fields: []string{"title"},
 		},
 		{
 			name: "description longer than 255 characters",
 			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
+			body: func() handler.UpdateBagRequest {
 				b := validBody
 				b.Description = strings.Repeat("a", 256)
 				return b
 			}(),
+			fields: []string{"description"},
 		},
 		{
 			name: "stock equal to 0",
 			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
+			body: func() handler.UpdateBagRequest {
 				b := validBody
 				b.Stock = 0
 				return b
 			}(),
+			fields: []string{"stock"},
 		},
 		{
 			name: "negative stock",
 			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
+			body: func() handler.UpdateBagRequest {
 				b := validBody
 				b.Stock = -1
 				return b
 			}(),
+			fields: []string{"stock"},
 		},
 		{
 			name: "originalPrice equal to 0",
 			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
+			body: func() handler.UpdateBagRequest {
 				b := validBody
 				b.OriginalPrice = 0
 				return b
 			}(),
+			fields: []string{"originalPrice"},
 		},
 		{
 			name: "negative originalPrice",
 			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
+			body: func() handler.UpdateBagRequest {
 				b := validBody
 				b.OriginalPrice = -1
 				return b
 			}(),
+			fields: []string{"originalPrice"},
 		},
 		{
 			name: "discount less than 30",
 			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
+			body: func() handler.UpdateBagRequest {
 				b := validBody
 				b.Discount = 29
 				return b
 			}(),
+			fields: []string{"discount"},
 		},
 		{
 			name: "discount greater than 90",
 			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
+			body: func() handler.UpdateBagRequest {
 				b := validBody
 				b.Discount = 91
 				return b
 			}(),
-		},
-		{
-			name: "empty items",
-			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
-				b := validBody
-				b.Items = []handler.UpdateBagItemRequestBody{}
-				return b
-			}(),
+			fields: []string{"discount"},
 		},
 		{
 			name: "item with empty uuid",
 			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
+			body: func() handler.UpdateBagRequest {
 				b := validBody
-				b.Items = []handler.UpdateBagItemRequestBody{
-					{Quantity: 2},
+				b.Items = []handler.UpdateBagItemRequest{
+					{Quantity: 1},
 				}
 				return b
 			}(),
-		},
-		{
-			name: "item with white space uuid",
-			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
-				b := validBody
-				b.Items = []handler.UpdateBagItemRequestBody{
-					{ID: "   ", Quantity: 2},
-				}
-				return b
-			}(),
+			fields: []string{"id"},
 		},
 		{
 			name: "item with invalid uuid",
 			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
+			body: func() handler.UpdateBagRequest {
 				b := validBody
-				b.Items = []handler.UpdateBagItemRequestBody{
-					{ID: "invalid-id", Quantity: 1},
+				b.Items = []handler.UpdateBagItemRequest{
+					{ProductID: "invalid-id", Quantity: 1},
 				}
 				return b
 			}(),
+			fields: []string{"id"},
 		},
 		{
 			name: "item with negative quantity",
 			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
+			body: func() handler.UpdateBagRequest {
 				b := validBody
-				b.Items = []handler.UpdateBagItemRequestBody{
-					{ID: "550e8400-e29b-41d4-a716-446655440000", Quantity: -1},
+				b.Items = []handler.UpdateBagItemRequest{
+					{ProductID: "550e8400-e29b-41d4-a716-446655440000", Quantity: -1},
 				}
 				return b
 			}(),
+			fields: []string{"quantity"},
 		},
 		{
 			name: "item with quantity equal to 0",
 			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
+			body: func() handler.UpdateBagRequest {
 				b := validBody
-				b.Items = []handler.UpdateBagItemRequestBody{
-					{ID: "550e8400-e29b-41d4-a716-446655440000", Quantity: 0},
+				b.Items = []handler.UpdateBagItemRequest{
+					{ProductID: "550e8400-e29b-41d4-a716-446655440000", Quantity: 0},
 				}
 				return b
 			}(),
+			fields: []string{"quantity"},
 		},
 		{
 			name: "end before start",
 			id:   validID,
-			reqBody: func() handler.UpdateBagRequestBody {
+			body: func() handler.UpdateBagRequest {
 				b := validBody
 				b.PickupWindow.End = now.Add(-time.Hour)
 				return b
 			}(),
+			fields: []string{"end"},
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			clk := clock.NewFakeClock()
-			bagRepo := repository.NewInMemRepo()
-			productRepo := productRepository.NewInMemRepo()
-			uc := usecase.NewUpdateBag(clk, bagRepo, productRepo)
-			v := validation.NewValidator()
-			h := handler.NewUpdateBag(v, uc)
+		errs := validation.NewErrors()
+		validation.Struct(v, errs, tt.body)
 
-			b, err := json.Marshal(tt.reqBody)
-			require.NoError(t, err)
+		if tt.fields == nil {
+			if errs.HasErrors() {
+				assert.NoError(t, errs)
+			}
+			return
+		}
 
-			req := newUpdateBagReq(tt.id, bytes.NewReader(b))
-			rr := httptest.NewRecorder()
-
-			h.Handle(rr, req)
-
-			assert.Equal(t, http.StatusUnprocessableEntity, rr.Code)
-		})
+		for _, field := range tt.fields {
+			if !errs.Has(field) {
+				assert.Error(t, errs, field, errs)
+			}
+		}
 	}
 }

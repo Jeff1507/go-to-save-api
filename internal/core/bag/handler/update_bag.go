@@ -14,24 +14,24 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type UpdateBagItemRequestBody struct {
-	ID       string `json:"id" validate:"required,uuid"`
-	Quantity int32  `json:"quantity" validate:"required,gt=0"`
+type UpdateBagItemRequest struct {
+	ProductID string `json:"productId" validate:"required,uuid"`
+	Quantity  int32  `json:"quantity" validate:"required,gt=0"`
 }
 
-type UpdateBagPickupWindowRequestBody struct {
+type UpdateBagPickupWindowRequest struct {
 	Start time.Time `json:"start" validate:"required"`
 	End   time.Time `json:"end" validate:"required,gtfield=Start"`
 }
 
-type UpdateBagRequestBody struct {
-	Title         string                           `json:"title" validate:"required,notblank,min=3,max=50"`
-	Description   string                           `json:"description" validate:"omitempty,notblank,max=255"`
-	Stock         int32                            `json:"stock" validate:"required,gt=0"`
-	OriginalPrice int64                            `json:"originalPrice" validate:"required,gt=0"`
-	Discount      int                              `json:"discount" validate:"required,gte=30,lte=90"`
-	Items         []UpdateBagItemRequestBody       `json:"items" validate:"required,min=1,dive"`
-	PickupWindow  UpdateBagPickupWindowRequestBody `json:"pickupWindow" validate:"required"`
+type UpdateBagRequest struct {
+	Title         string                       `json:"title" validate:"required,notblank,min=3,max=50"`
+	Description   string                       `json:"description" validate:"omitempty,notblank,max=255"`
+	Stock         int32                        `json:"stock" validate:"required,gt=0"`
+	OriginalPrice int64                        `json:"originalPrice" validate:"required,gt=0"`
+	Discount      int                          `json:"discount" validate:"required,gte=30,lte=90"`
+	Items         []UpdateBagItemRequest       `json:"items" validate:"required,min=1,dive"`
+	PickupWindow  UpdateBagPickupWindowRequest `json:"pickupWindow" validate:"required"`
 }
 
 type UpdateBag struct {
@@ -51,7 +51,7 @@ func (h *UpdateBag) Handle(w http.ResponseWriter, r *http.Request) {
 
 	id := chi.URLParam(r, "id")
 
-	var body UpdateBagRequestBody
+	var body UpdateBagRequest
 	if err := render.Bind(r, &body); err != nil {
 		render.InvalidRequestBody(w)
 		return
@@ -62,11 +62,16 @@ func (h *UpdateBag) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	inputItems := make([]usecase.UpdateBagItemInput, 0, len(body.Items))
+	pickupWindow := usecase.UpdateBagPickupWindowInput{
+		Start: body.PickupWindow.Start,
+		End:   body.PickupWindow.End,
+	}
+
+	items := make([]usecase.UpdateBagItemInput, 0, len(body.Items))
 	for _, item := range body.Items {
-		inputItems = append(inputItems, usecase.UpdateBagItemInput{
-			ID:       item.ID,
-			Quantity: item.Quantity,
+		items = append(items, usecase.UpdateBagItemInput{
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
 		})
 	}
 
@@ -77,11 +82,8 @@ func (h *UpdateBag) Handle(w http.ResponseWriter, r *http.Request) {
 		Stock:         body.Stock,
 		OriginalPrice: body.OriginalPrice,
 		Discount:      body.Discount,
-		Items:         inputItems,
-		PickupWindow: usecase.UpdateBagPickupWindowInput{
-			Start: body.PickupWindow.Start,
-			End:   body.PickupWindow.End,
-		},
+		PickupWindow:  pickupWindow,
+		Items:         items,
 	}); err != nil {
 		if errors.Is(err, bag.ErrNotFound) {
 			render.Error(w, http.StatusNotFound, "Sacola não encontrada")
@@ -115,7 +117,7 @@ func (h *UpdateBag) Handle(w http.ResponseWriter, r *http.Request) {
 	render.NoContent(w)
 }
 
-func (h *UpdateBag) validateRequest(id string, body UpdateBagRequestBody) validation.Errors {
+func (h *UpdateBag) validateRequest(id string, body UpdateBagRequest) validation.Errors {
 	errs := validation.NewErrors()
 
 	validation.UUID(h.v, errs, id, "id")
