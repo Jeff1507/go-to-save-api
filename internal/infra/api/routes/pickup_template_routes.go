@@ -6,27 +6,31 @@ import (
 )
 
 type PickupTemplateRoutes struct {
-	createPickupTemplate *handler.CreatePickupTemplate
-	updatePickupTemplate *handler.UpdatePickupTemplate
-	deletePickupTemplate *handler.DeletePickupTemplate
+	create *handler.CreatePickupTemplate
+	list   *handler.ListStorePickupTemplates
+	update *handler.UpdatePickupTemplate
+	delete *handler.DeletePickupTemplate
 }
 
 func NewPickupTemplateRoutes(
-	createPickupTemplate *handler.CreatePickupTemplate,
-	updatePickupTemplate *handler.UpdatePickupTemplate,
-	deletePickupTemplate *handler.DeletePickupTemplate,
+	create *handler.CreatePickupTemplate,
+	update *handler.UpdatePickupTemplate,
+	delete *handler.DeletePickupTemplate,
+	list *handler.ListStorePickupTemplates,
 ) *PickupTemplateRoutes {
 	return &PickupTemplateRoutes{
-		createPickupTemplate: createPickupTemplate,
-		updatePickupTemplate: updatePickupTemplate,
-		deletePickupTemplate: deletePickupTemplate,
+		create: create,
+		list:   list,
+		update: update,
+		delete: delete,
 	}
 }
 
 func (r *PickupTemplateRoutes) Register(router *chi.Mux) {
 	router.Route("/pickup-templates", func(pickupTemplates chi.Router) {
-		pickupTemplates.Post("/", r.createPickupTemplate.Handle)
-		pickupTemplates.Put("/{id}", r.updatePickupTemplate.Handle)
-		pickupTemplates.Delete("/{id}", r.deletePickupTemplate.Handle)
+		pickupTemplates.Post("/", r.create.Handle)
+		pickupTemplates.Get("/", r.list.Handle)
+		pickupTemplates.Put("/{id}", r.update.Handle)
+		pickupTemplates.Delete("/{id}", r.delete.Handle)
 	})
 }

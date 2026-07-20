@@ -6,31 +6,31 @@ import (
 )
 
 type ProductRoutes struct {
-	create      *handler.CreateProduct
-	update      *handler.UpdateProduct
-	delete      *handler.DeleteProduct
-	listByStore *handler.ListProductsByStore
+	create *handler.CreateProduct
+	list   *handler.ListStoreProducts
+	update *handler.UpdateProduct
+	delete *handler.DeleteProduct
 }
 
 func NewProductRoutes(
 	create *handler.CreateProduct,
 	update *handler.UpdateProduct,
 	delete *handler.DeleteProduct,
-	listByStore *handler.ListProductsByStore,
+	list *handler.ListStoreProducts,
 ) *ProductRoutes {
 	return &ProductRoutes{
-		create:      create,
-		update:      update,
-		delete:      delete,
-		listByStore: listByStore,
+		create: create,
+		list:   list,
+		update: update,
+		delete: delete,
 	}
 }
 
 func (r *ProductRoutes) Register(router *chi.Mux) {
 	router.Route("/products", func(products chi.Router) {
 		products.Post("/", r.create.Handle)
+		products.Get("/", r.list.Handle)
 		products.Put("/{id}", r.update.Handle)
 		products.Delete("/{id}", r.delete.Handle)
-		products.Get("/", r.listByStore.Handle)
 	})
 }
