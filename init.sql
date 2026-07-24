@@ -1,6 +1,9 @@
 -- TODO: Criar indexes para consultas mais rápidas --
+-- TODO: Adicionar soft delete em users, stores e customers por causa da LGPD --
 
 CREATE TYPE bag_status AS ENUM ('ACTIVE', 'CLOSED');
+
+CREATE TYPE order_status AS ENUM ('PENDING', 'CONFIRMED', 'CANCELLED', 'NO_SHOW');
 
 CREATE TABLE users (
     id UUID PRIMARY KEY NOT NULL,
@@ -9,15 +12,40 @@ CREATE TABLE users (
     verified_at TIMESTAMPTZ
 );
 
+CREATE TABLE customers (
+    id UUID PRIMARY KEY NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    picture_key TEXT,
+
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
 CREATE TABLE stores (
     id UUID PRIMARY KEY NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
-    cnpj VARCHAR(20) UNIQUE NOT NULL,
+    cnpj VARCHAR(14) UNIQUE NOT NULL,
     picture_key TEXT,
     description TEXT,
 
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Usar PostGIS ou indíce em latitude e longitude para consultas mais rápidas com geolocalização --
+CREATE TABLE addresses (
+    store_id UUID PRIMARY KEY NOT NULL REFERENCES stores(id) ON DELETE RESTRICT,
+    postal_code VARCHAR(20) NOT NULL,
+    street VARCHAR(150) NOT NULL,
+    number VARCHAR(20) NOT NULL,
+    neighborhood VARCHAR(100) NOT NULL,
+    complement TEXT,
+    city VARCHAR(100) NOT NULL,
+    state CHAR(2) NOT NULL,
+
+    latitude NUMERIC(10, 7) NOT NULL,
+    longitude NUMERIC(10, 7) NOT NULL
 );
 
 CREATE TABLE products (
@@ -32,6 +60,7 @@ CREATE TABLE products (
     UNIQUE(store_id, name)
 );
 
+-- Preset para cadastrar sacolas de forma mais rápida --
 CREATE TABLE pickup_templates (
     id UUID PRIMARY KEY NOT NULL,
     store_id UUID NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
@@ -44,7 +73,7 @@ CREATE TABLE pickup_templates (
 
 CREATE TABLE bags (
     id UUID PRIMARY KEY NOT NULL,
-    store_id UUID NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+    store_id UUID NOT NULL REFERENCES stores(id) ON DELETE RESTRICT,
     title VARCHAR(50) NOT NULL,
     description TEXT,
     stock INTEGER NOT NULL,
@@ -58,10 +87,66 @@ CREATE TABLE bags (
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
+-- Snapshot de product --
 CREATE TABLE bag_items (
+    id UUID PRIMARY KEY NOT NULL,
     bag_id UUID NOT NULL REFERENCES bags(id) ON DELETE CASCADE,
-    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    image_key TEXT,
     quantity INTEGER NOT NULL,
 
-    PRIMARY KEY(bag_id, product_id)
+    UNIQUE(bag_id, name)
+);
+
+CREATE TABLE orders (
+    id UUID PRIMARY KEY NOT NULL,
+    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,
+    store_id UUID NOT NULL REFERENCES stores(id) ON DELETE RESTRICT,
+    status order_status DEFAULT 'PENDING' NOT NULL,
+    total_price BIGINT NOT NULL,
+    pickup_start TIMESTAMPTZ NOT NULL,
+    pickup_end TIMESTAMPTZ NOT NULL,
+    confirmation_code CHAR(4) NOT NULL,
+    completed_at TIMESTAMPTZ,
+
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+
+    UNIQUE(store_id, confirmation_code)
+);
+
+CREATE TABLE order_items (
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    bag_id UUID NOT NULL REFERENCES bags(id) ON DELETE RESTRICT,
+    quantity INTEGER NOT NULL,
+    unit_price BIGINT NOT NULL,
+
+    PRIMARY KEY(order_id, bag_id)
+);
+
+CREATE TABLE reviews (
+    id UUID PRIMARY KEY NOT NULL,
+    order_id UUID UNIQUE NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    rating SMALLINT NOT NULL,
+
+    reviewed_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Será povoada por seeds --
+CREATE TABLE tags (
+    id SERIAL PRIMARY KEY NOT NULL,
+    name VARCHAR(100) UNIQUE NOT NULL
+);
+
+CREATE TABLE review_tags (
+    review_id UUID NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
+    tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+
+    PRIMARY KEY(review_id, tag_id)
+);
+
+CREATE TABLE stores_rating (
+    store_id UUID PRIMARY KEY NOT NULL REFERENCES stores(id) ON DELETE RESTRICT,
+    rating_sum INTEGER NOT NULL,
+    rating_count INTEGER NOT NULL
 );
