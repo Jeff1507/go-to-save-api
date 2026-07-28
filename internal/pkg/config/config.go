@@ -19,6 +19,7 @@ type Redis struct {
 	Addr     string `env:"REDIS_ADDR,required"`
 	Username string `env:"REDIS_USERNAME"`
 	Password string `env:"REDIS_PASSWORD"`
+	DB       int    `env:"REDIS_DB" envDefault:"0"`
 }
 
 type Storage struct {
