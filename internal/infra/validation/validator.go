@@ -80,12 +80,14 @@ func translateTag(fErr validator.FieldError) string {
 		if fErr.Kind() == reflect.Slice {
 			return fmt.Sprintf("deve ter no mínimo %s elemento(s)", fErr.Param())
 		}
+
 		return fmt.Sprintf("deve ter no mínimo %s caracteres", fErr.Param())
 
 	case "max":
 		if fErr.Kind() == reflect.Slice {
 			return fmt.Sprintf("deve ter no máximo %s elemento(s)", fErr.Param())
 		}
+
 		return fmt.Sprintf("deve ter no máximo %s caracteres", fErr.Param())
 
 	case "gt":
