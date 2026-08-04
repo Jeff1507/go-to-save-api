@@ -51,8 +51,10 @@ func (qry *ListStoreProducts) Execute(
 
 	products := make([]StoreProduct, 0)
 	for rows.Next() {
-		var imgKey sql.NullString
-		var p StoreProduct
+		var (
+			p      StoreProduct
+			imgKey sql.NullString
+		)
 		if err := rows.Scan(
 			&p.ID,
 			&p.Name,

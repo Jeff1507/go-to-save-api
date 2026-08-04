@@ -109,6 +109,21 @@ func (repo *PostgresRepo) Update(ctx context.Context, c *customer.Customer) erro
 	return nil
 }
 
+func (repo *PostgresRepo) Exists(ctx context.Context, email string) (bool, error) {
+	var exists bool
+	if err := repo.pg.QueryRow(
+		ctx,
+		`
+		SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)
+		`,
+		email,
+	).Scan(&exists); err != nil {
+		return false, fmt.Errorf("check if user email exists: %w", err)
+	}
+
+	return exists, nil
+}
+
 func (repo *PostgresRepo) Find(ctx context.Context, id string) (*customer.Customer, error) {
 	row := repo.pg.QueryRow(
 		ctx,
@@ -117,7 +132,7 @@ func (repo *PostgresRepo) Find(ctx context.Context, id string) (*customer.Custom
 			u.id, u.email, u.password_hash, u.verified_at, 
 			c.first_name, c.last_name, c.picture_key, c.created_at, c.updated_at 
 		FROM users u 
-		INNER JOIN customers c ON u.id = c.id 
+		INNER JOIN customers c ON c.id = u.id
 		WHERE u.id = $1
 		`,
 		id,
@@ -156,7 +171,7 @@ func (repo *PostgresRepo) FindByEmail(
 			u.id, u.email, u.password_hash, u.verified_at, 
 			c.first_name, c.last_name, c.picture_key, c.created_at, c.updated_at 
 		FROM users u 
-		INNER JOIN customers c ON u.id = c.id 
+		INNER JOIN customers c ON c.id = u.id 
 		WHERE u.email = $1
 		`,
 		email,

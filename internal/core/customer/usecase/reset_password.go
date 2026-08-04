@@ -1,0 +1,71 @@
+package usecase
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/Jeff1507/go-to-save-api/internal/common/clock"
+	"github.com/Jeff1507/go-to-save-api/internal/core/customer"
+	"github.com/Jeff1507/go-to-save-api/internal/infra/auth/otp"
+	"github.com/Jeff1507/go-to-save-api/internal/infra/auth/session"
+	"github.com/Jeff1507/go-to-save-api/internal/pkg/hash"
+)
+
+type ResetPasswordInput struct {
+	Email       string
+	Code        string
+	NewPassword string
+}
+
+type ResetPassword struct {
+	clock          clock.Clock
+	customerRepo   customer.Repository
+	sessionManager session.Manager
+	otpManager     otp.Manager
+}
+
+func NewResetPassword(
+	clock clock.Clock,
+	customerRepo customer.Repository,
+	sessionManager session.Manager,
+	otpManager otp.Manager,
+) *ResetPassword {
+	return &ResetPassword{
+		clock:          clock,
+		customerRepo:   customerRepo,
+		sessionManager: sessionManager,
+		otpManager:     otpManager,
+	}
+}
+
+func (uc *ResetPassword) Execute(ctx context.Context, input ResetPasswordInput) error {
+	now := uc.clock.Now()
+
+	if err := uc.otpManager.Verify(ctx, otp.PasswordReset, input.Email, input.Code); err != nil {
+		return fmt.Errorf("verify otp: %w", err)
+	}
+
+	cust, err := uc.customerRepo.FindByEmail(ctx, input.Email)
+	if err != nil {
+		return fmt.Errorf("find customer by email: %w", err)
+	}
+
+	passwordHash, err := hash.Generate(input.NewPassword)
+	if err != nil {
+		return fmt.Errorf("hash password: %w", err)
+	}
+
+	if err := cust.ChangePassword(passwordHash, now); err != nil {
+		return fmt.Errorf("change password: %w", err)
+	}
+
+	if err := uc.customerRepo.Update(ctx, cust); err != nil {
+		return fmt.Errorf("update customer: %w", err)
+	}
+
+	if err := uc.sessionManager.RevokeAll(ctx, cust.ID()); err != nil {
+		return fmt.Errorf("revoke all sessions: %w", err)
+	}
+
+	return nil
+}

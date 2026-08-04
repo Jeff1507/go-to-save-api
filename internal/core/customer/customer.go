@@ -92,6 +92,21 @@ func (c *Customer) Verify(now time.Time) error {
 	return nil
 }
 
+func (c *Customer) ChangePassword(passwordHash string, now time.Time) error {
+	if passwordHash == "" {
+		return errors.New("password hash is required")
+	}
+
+	if now.IsZero() {
+		return errors.New("now is not set")
+	}
+
+	c.passwordHash = passwordHash
+	c.updatedAt = now
+
+	return nil
+}
+
 func (c Customer) ID() string {
 	return c.id
 }

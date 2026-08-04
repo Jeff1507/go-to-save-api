@@ -39,18 +39,8 @@ func (repo *PostgresRepo) Save(ctx context.Context, b *bag.Bag) error {
 		)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		`,
-		r.ID,
-		r.StoreID,
-		r.Title,
-		r.Description,
-		r.Stock,
-		r.OriginalPrice,
-		r.FinalPrice,
-		r.Status,
-		r.PickupWindow.Start,
-		r.PickupWindow.End,
-		r.CreatedAt,
-		r.UpdatedAt,
+		r.ID, r.StoreID, r.Title, r.Description, r.Stock, r.OriginalPrice, r.FinalPrice, r.Status,
+		r.PickupWindow.Start, r.PickupWindow.End, r.CreatedAt, r.UpdatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("insert bag: %v", err)
@@ -105,16 +95,8 @@ func (repo *PostgresRepo) Update(ctx context.Context, b *bag.Bag) error {
 			status = $6, pickup_start = $7, pickup_end = $8, updated_at = $9
 		WHERE id = $10
 		`,
-		r.Title,
-		r.Description,
-		r.Stock,
-		r.OriginalPrice,
-		r.FinalPrice,
-		r.Status,
-		r.PickupWindow.Start,
-		r.PickupWindow.End,
-		r.UpdatedAt,
-		r.ID,
+		r.Title, r.Description, r.Stock, r.OriginalPrice, r.FinalPrice, r.Status,
+		r.PickupWindow.Start, r.PickupWindow.End, r.UpdatedAt, r.ID,
 	)
 	if err != nil {
 		return fmt.Errorf("update bag: %v", err)
