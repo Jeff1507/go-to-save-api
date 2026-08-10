@@ -16,7 +16,7 @@ func NewRedisClient(addr, username, password string, db int) (*redis.Client, err
 	})
 
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
-		return nil, fmt.Errorf("ping to redis: %v", err)
+		return nil, fmt.Errorf("ping to redis: %w", err)
 	}
 
 	return rdb, nil
