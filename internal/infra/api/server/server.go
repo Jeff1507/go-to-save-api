@@ -3,44 +3,41 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
 type Route interface {
-	Register(router *chi.Mux)
+	Register(router *gin.Engine)
 }
 
 type Server struct {
-	router *chi.Mux
+	router *gin.Engine
 }
 
 func New(allowedOrigins []string, filesDir string) *Server {
-	router := chi.NewRouter()
+	setupValidator()
 
-	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   allowedOrigins,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-		AllowCredentials: false,
-		MaxAge:           300,
+	router := gin.Default()
+
+	router.SetTrustedProxies(nil)
+
+	router.MaxMultipartMemory = 10 << 20 // 10 MB
+
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     allowedOrigins,
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: true,
+		MaxAge:           300 * time.Second,
 	}))
 
-	router.Use(middleware.RequestID)
-	router.Use(middleware.RealIP)
-	router.Use(middleware.Logger)
-	router.Use(middleware.Recoverer)
+	router.Static("/uploads", filesDir)
 
-	router.Handle("/uploads/*", http.StripPrefix(
-		"/uploads/",
-		http.FileServer(http.Dir(filesDir)),
-	))
-
-	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("TUDO OK 👍"))
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, "TUDO OK 👍")
 	})
 
 	return &Server{
@@ -56,8 +53,8 @@ func (srv *Server) AddRoutes(routes ...Route) {
 
 func (srv *Server) Run(port string) error {
 	addr := ":" + port
-	if err := http.ListenAndServe(addr, srv.router); err != nil {
-		return fmt.Errorf("listen and serve: %v", err)
+	if err := srv.router.Run(addr); err != nil {
+		return fmt.Errorf("run gin router: %w", err)
 	}
 
 	return nil
