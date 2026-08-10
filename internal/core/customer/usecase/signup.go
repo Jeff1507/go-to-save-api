@@ -6,8 +6,8 @@ import (
 
 	"github.com/Jeff1507/go-to-save-api/internal/common/clock"
 	"github.com/Jeff1507/go-to-save-api/internal/core/customer"
+	"github.com/Jeff1507/go-to-save-api/internal/infra/auth/otp"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/auth/session"
-	"github.com/Jeff1507/go-to-save-api/internal/infra/otp"
 	"github.com/Jeff1507/go-to-save-api/internal/pkg/hash"
 	"github.com/Jeff1507/go-to-save-api/internal/pkg/uuid"
 )
@@ -25,23 +25,23 @@ type SignupOutput struct {
 }
 
 type Signup struct {
-	clock          clock.Clock
-	customerRepo   customer.Repository
-	sessionManager session.Manager
-	otpManager     otp.Manager
+	customerRepo customer.Repository
+	sessions     session.Manager
+	otps         otp.Manager
+	clock        clock.Clock
 }
 
 func NewSignup(
-	clock clock.Clock,
 	customerRepo customer.Repository,
-	sessionManager session.Manager,
-	otpManager otp.Manager,
+	sessions session.Manager,
+	otps otp.Manager,
+	clock clock.Clock,
 ) *Signup {
 	return &Signup{
-		clock:          clock,
-		customerRepo:   customerRepo,
-		sessionManager: sessionManager,
-		otpManager:     otpManager,
+		customerRepo: customerRepo,
+		sessions:     sessions,
+		otps:         otps,
+		clock:        clock,
 	}
 }
 
@@ -78,13 +78,13 @@ func (uc *Signup) Execute(ctx context.Context, input SignupInput) (SignupOutput,
 		return SignupOutput{}, fmt.Errorf("save customer: %w", err)
 	}
 
-	sessionID, err := uc.sessionManager.Create(ctx, cust.ID())
+	sessionID, err := uc.sessions.Create(ctx, cust.ID())
 	if err != nil {
 		return SignupOutput{}, fmt.Errorf("create session: %w", err)
 	}
 
 	// Falha silenciosa, usuário pode pedir reenvio depois
-	code, err := uc.otpManager.Create(ctx, otp.EmailVerification, cust.Email())
+	code, err := uc.otps.Create(ctx, otp.EmailVerification, cust.Email())
 	if err != nil {
 		fmt.Printf("warn: failed to create otp for %s: %v\n", cust.Email(), err)
 	} else {
