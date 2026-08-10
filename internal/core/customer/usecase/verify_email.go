@@ -15,20 +15,27 @@ type VerifyEmailInput struct {
 }
 
 type VerifyEmail struct {
-	clock        clock.Clock
 	customerRepo customer.Repository
-	otpManager   otp.Manager
+	otps         otp.Manager
+	clock        clock.Clock
+}
+
+func NewVerifyEmail(
+	customerRepo customer.Repository,
+	otps otp.Manager,
+	clock clock.Clock,
+) *VerifyEmail {
+	return &VerifyEmail{
+		customerRepo: customerRepo,
+		otps:         otps,
+		clock:        clock,
+	}
 }
 
 func (uc *VerifyEmail) Execute(ctx context.Context, input VerifyEmailInput) error {
 	now := uc.clock.Now()
 
-	if err := uc.otpManager.Verify(
-		ctx,
-		otp.EmailVerification,
-		input.Email,
-		input.Code,
-	); err != nil {
+	if err := uc.otps.Verify(ctx, otp.EmailVerification, input.Email, input.Code); err != nil {
 		return fmt.Errorf("verify otp: %w", err)
 	}
 
