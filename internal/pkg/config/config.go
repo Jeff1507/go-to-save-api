@@ -8,7 +8,7 @@ import (
 
 type App struct {
 	Port      string `env:"PORT" envDefault:"8080"`
-	WebOrigin string `env:"WEB_ORIGIN"`
+	WebOrigin string `env:"WEB_ORIGIN,required"`
 }
 
 type Postgres struct {
@@ -23,7 +23,6 @@ type Redis struct {
 }
 
 type Storage struct {
-	BaseURL  string `env:"STORAGE_BASE_URL" envDefault:"http://localhost:8080"`
 	BasePath string `env:"STORAGE_BASE_PATH" envDefault:"./uploads/"`
 }
 
@@ -38,7 +37,7 @@ func New() (Config, error) {
 	var cfg Config
 
 	if err := env.Parse(&cfg); err != nil {
-		return Config{}, fmt.Errorf("parse environment variables: %v", err)
+		return Config{}, fmt.Errorf("parse environment variables: %w", err)
 	}
 
 	return cfg, nil
