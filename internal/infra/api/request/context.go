@@ -23,3 +23,14 @@ func StoreID(ctx context.Context) (string, bool) {
 	id, ok := ctx.Value(storeKey{}).(string)
 	return id, ok
 }
+
+type sessionKey struct{}
+
+func WithSessionID(ctx context.Context, id string) context.Context {
+	return context.WithValue(ctx, sessionKey{}, id)
+}
+
+func SessionID(ctx context.Context) (string, bool) {
+	id, ok := ctx.Value(sessionKey{}).(string)
+	return id, ok
+}
