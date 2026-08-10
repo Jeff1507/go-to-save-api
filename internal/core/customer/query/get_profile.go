@@ -13,30 +13,30 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type CustomerProfile struct {
+type Profile struct {
 	ID         string
 	Email      string
 	FirstName  string
 	LastName   string
-	PictureURL *string
+	AvatarURL  *string
 	VerifiedAt *time.Time
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }
 
-type GetCustomer struct {
-	pg          *pgxpool.Pool
-	fileStorage storage.Storage
+type GetProfile struct {
+	pg      *pgxpool.Pool
+	storage storage.Storage
 }
 
-func NewGetCustomer(pg *pgxpool.Pool, fileStorage storage.Storage) *GetCustomer {
-	return &GetCustomer{
-		pg:          pg,
-		fileStorage: fileStorage,
+func NewGetProfile(pg *pgxpool.Pool, storage storage.Storage) *GetProfile {
+	return &GetProfile{
+		pg:      pg,
+		storage: storage,
 	}
 }
 
-func (qry *GetCustomer) Execute(ctx context.Context, id string) (CustomerProfile, error) {
+func (qry *GetProfile) Execute(ctx context.Context, id string) (Profile, error) {
 	row := qry.pg.QueryRow(
 		ctx,
 		`
@@ -46,7 +46,7 @@ func (qry *GetCustomer) Execute(ctx context.Context, id string) (CustomerProfile
 			u.verified_at,
 			c.first_name,
 			c.last_name,
-			c.picture_key,
+			c.avatar_key,
 			c.created_at,
 			c.updated_at
 		FROM users u
@@ -57,8 +57,8 @@ func (qry *GetCustomer) Execute(ctx context.Context, id string) (CustomerProfile
 	)
 
 	var (
-		profile    CustomerProfile
-		pictureKey sql.NullString
+		profile    Profile
+		avatarKey  sql.NullString
 		verifiedAt sql.NullTime
 	)
 	if err := row.Scan(
@@ -67,20 +67,20 @@ func (qry *GetCustomer) Execute(ctx context.Context, id string) (CustomerProfile
 		&verifiedAt,
 		&profile.FirstName,
 		&profile.LastName,
-		&pictureKey,
+		&avatarKey,
 		&profile.CreatedAt,
 		&profile.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return CustomerProfile{}, customer.ErrNotFound
+			return Profile{}, customer.ErrNotFound
 		}
 
-		return CustomerProfile{}, fmt.Errorf("scan customer: %w", err)
+		return Profile{}, fmt.Errorf("scan customer: %w", err)
 	}
 
-	if pictureKey.Valid {
-		pictureURL := qry.fileStorage.URL(pictureKey.String)
-		profile.PictureURL = &pictureURL
+	if avatarKey.Valid {
+		avatarURL := qry.storage.URL(avatarKey.String)
+		profile.AvatarURL = &avatarURL
 	}
 
 	if verifiedAt.Valid {
