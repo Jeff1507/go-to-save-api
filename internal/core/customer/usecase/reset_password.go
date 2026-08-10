@@ -18,30 +18,30 @@ type ResetPasswordInput struct {
 }
 
 type ResetPassword struct {
-	clock          clock.Clock
-	customerRepo   customer.Repository
-	sessionManager session.Manager
-	otpManager     otp.Manager
+	customerRepo customer.Repository
+	sessions     session.Manager
+	otps         otp.Manager
+	clock        clock.Clock
 }
 
 func NewResetPassword(
-	clock clock.Clock,
 	customerRepo customer.Repository,
-	sessionManager session.Manager,
-	otpManager otp.Manager,
+	sessions session.Manager,
+	otps otp.Manager,
+	clock clock.Clock,
 ) *ResetPassword {
 	return &ResetPassword{
-		clock:          clock,
-		customerRepo:   customerRepo,
-		sessionManager: sessionManager,
-		otpManager:     otpManager,
+		customerRepo: customerRepo,
+		sessions:     sessions,
+		otps:         otps,
+		clock:        clock,
 	}
 }
 
 func (uc *ResetPassword) Execute(ctx context.Context, input ResetPasswordInput) error {
 	now := uc.clock.Now()
 
-	if err := uc.otpManager.Verify(ctx, otp.PasswordReset, input.Email, input.Code); err != nil {
+	if err := uc.otps.Verify(ctx, otp.PasswordReset, input.Email, input.Code); err != nil {
 		return fmt.Errorf("verify otp: %w", err)
 	}
 
@@ -63,8 +63,8 @@ func (uc *ResetPassword) Execute(ctx context.Context, input ResetPasswordInput) 
 		return fmt.Errorf("update customer: %w", err)
 	}
 
-	if err := uc.sessionManager.RevokeAll(ctx, cust.ID()); err != nil {
-		return fmt.Errorf("revoke all sessions: %w", err)
+	if err := uc.sessions.RevokeAll(ctx, cust.ID()); err != nil {
+		fmt.Printf("warn: failed to revoke sessions: %v\n", err)
 	}
 
 	return nil
