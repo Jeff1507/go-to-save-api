@@ -10,7 +10,7 @@ type Customer struct {
 	email        string
 	firstName    string
 	lastName     string
-	pictureKey   string
+	avatarKey    string
 	passwordHash string
 	verifiedAt   time.Time
 	createdAt    time.Time
@@ -58,7 +58,7 @@ func From(
 	email string,
 	firstName string,
 	lastName string,
-	pictureKey string,
+	avatarKey string,
 	passwordHash string,
 	verifiedAt time.Time,
 	createdAt time.Time,
@@ -69,7 +69,7 @@ func From(
 		email:        email,
 		firstName:    firstName,
 		lastName:     lastName,
-		pictureKey:   pictureKey,
+		avatarKey:    avatarKey,
 		passwordHash: passwordHash,
 		verifiedAt:   verifiedAt,
 		createdAt:    createdAt,
@@ -82,11 +82,66 @@ func (c Customer) IsVerified() bool {
 }
 
 func (c *Customer) Verify(now time.Time) error {
+	if c.IsVerified() {
+		return nil
+	}
+
 	if now.IsZero() {
 		return errors.New("now is not set")
 	}
 
 	c.verifiedAt = now
+	c.updatedAt = now
+
+	return nil
+}
+
+func (c *Customer) ChangeEmail(email string, now time.Time) error {
+	if email == "" {
+		return errors.New("email is required")
+	}
+
+	if now.IsZero() {
+		return errors.New("now is not set")
+	}
+
+	c.email = email
+	c.verifiedAt = time.Time{}
+	c.updatedAt = now
+
+	return nil
+}
+
+func (c *Customer) ChangeName(firstName, lastName string, now time.Time) error {
+	if firstName == "" {
+		return errors.New("first name is required")
+	}
+
+	if lastName == "" {
+		return errors.New("last name is required")
+	}
+
+	if now.IsZero() {
+		return errors.New("now is not set")
+	}
+
+	c.firstName = firstName
+	c.lastName = lastName
+	c.updatedAt = now
+
+	return nil
+}
+
+func (c *Customer) ChangeAvatar(avatarKey string, now time.Time) error {
+	if avatarKey == "" {
+		return nil
+	}
+
+	if now.IsZero() {
+		return errors.New("now is not set")
+	}
+
+	c.avatarKey = avatarKey
 	c.updatedAt = now
 
 	return nil
@@ -127,8 +182,8 @@ func (c Customer) FullName() string {
 	return c.firstName + " " + c.lastName
 }
 
-func (c Customer) PictureKey() string {
-	return c.pictureKey
+func (c Customer) AvatarKey() string {
+	return c.avatarKey
 }
 
 func (c Customer) PasswordHash() string {
