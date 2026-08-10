@@ -34,7 +34,7 @@ func (mng *RedisManager) Create(
 		return "", fmt.Errorf("generate random code: %w", err)
 	}
 
-	if err := mng.rdb.Set(ctx, otpKey, code, ttl).Err(); err != nil {
+	if err := mng.rdb.Set(ctx, otpKey, code, TTL).Err(); err != nil {
 		return "", fmt.Errorf("insert otp: %w", err)
 	}
 

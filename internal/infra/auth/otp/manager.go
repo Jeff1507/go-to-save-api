@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const ttl = time.Minute * 15 // 15 minutos
+const TTL = time.Minute * 15 // 15 minutos
 
 var ErrInvalidOTP = errors.New("invalid or expired otp")
 
