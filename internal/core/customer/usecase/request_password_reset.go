@@ -10,16 +10,16 @@ import (
 
 type RequestPasswordReset struct {
 	customerRepo customer.Repository
-	otpManager   otp.Manager
+	otps         otp.Manager
 }
 
 func NewRequestPasswordReset(
 	customerRepo customer.Repository,
-	otpManager otp.Manager,
+	otps otp.Manager,
 ) *RequestPasswordReset {
 	return &RequestPasswordReset{
 		customerRepo: customerRepo,
-		otpManager:   otpManager,
+		otps:         otps,
 	}
 }
 
@@ -34,7 +34,7 @@ func (uc *RequestPasswordReset) Execute(ctx context.Context, email string) error
 		return nil
 	}
 
-	code, err := uc.otpManager.Create(ctx, otp.PasswordReset, email)
+	code, err := uc.otps.Create(ctx, otp.PasswordReset, email)
 	if err != nil {
 		return fmt.Errorf("create otp: %w", err)
 	}
