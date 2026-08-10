@@ -8,17 +8,17 @@ import (
 )
 
 type LogoutAll struct {
-	sessionManager session.Manager
+	sessions session.Manager
 }
 
-func NewLogoutAll(sessionManager session.Manager) *LogoutAll {
+func NewLogoutAll(sessions session.Manager) *LogoutAll {
 	return &LogoutAll{
-		sessionManager: sessionManager,
+		sessions: sessions,
 	}
 }
 
 func (uc *LogoutAll) Execute(ctx context.Context, userID string) error {
-	if err := uc.sessionManager.RevokeAll(ctx, userID); err != nil {
+	if err := uc.sessions.RevokeAll(ctx, userID); err != nil {
 		return fmt.Errorf("revoke all sessions: %w", err)
 	}
 
