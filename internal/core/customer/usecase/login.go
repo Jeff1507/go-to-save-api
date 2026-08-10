@@ -20,14 +20,14 @@ type LoginOutput struct {
 }
 
 type Login struct {
-	customerRepo   customer.Repository
-	sessionManager session.Manager
+	customerRepo customer.Repository
+	sessions     session.Manager
 }
 
-func NewLogin(customerRepo customer.Repository, sessionManager session.Manager) *Login {
+func NewLogin(customerRepo customer.Repository, sessions session.Manager) *Login {
 	return &Login{
-		customerRepo:   customerRepo,
-		sessionManager: sessionManager,
+		customerRepo: customerRepo,
+		sessions:     sessions,
 	}
 }
 
@@ -41,11 +41,12 @@ func (uc *Login) Execute(ctx context.Context, input LoginInput) (LoginOutput, er
 		return LoginOutput{}, fmt.Errorf("find customer by email: %w", err)
 	}
 
-	if !hash.Compare(cust.PasswordHash(), input.Password) {
+	passwordsMatch := hash.Compare(cust.PasswordHash(), input.Password)
+	if !passwordsMatch {
 		return LoginOutput{}, customer.ErrInvalidCredentials
 	}
 
-	sessionID, err := uc.sessionManager.Create(ctx, cust.ID())
+	sessionID, err := uc.sessions.Create(ctx, cust.ID())
 	if err != nil {
 		return LoginOutput{}, fmt.Errorf("create session: %w", err)
 	}
