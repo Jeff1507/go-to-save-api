@@ -11,12 +11,11 @@ import (
 )
 
 type LocalStorage struct {
-	baseURL  string
 	basePath string
 }
 
-func NewLocalStorage(baseURL, basePath string) (LocalStorage, error) {
-	paths := []string{ProductsPath, AvatarsPath}
+func NewLocalStorage(basePath string) (LocalStorage, error) {
+	paths := []string{AvatarsPath, ProductsPath}
 
 	for _, path := range paths {
 		dir := filepath.Join(basePath, path)
@@ -26,7 +25,6 @@ func NewLocalStorage(baseURL, basePath string) (LocalStorage, error) {
 	}
 
 	return LocalStorage{
-		baseURL:  baseURL,
 		basePath: basePath,
 	}, nil
 }
@@ -97,5 +95,5 @@ func (ls LocalStorage) Delete(key string) error {
 }
 
 func (ls LocalStorage) URL(key string) string {
-	return ls.baseURL + "/uploads/" + key
+	return "/uploads/" + key
 }
