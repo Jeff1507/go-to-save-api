@@ -12,7 +12,7 @@ type customerRow struct {
 	Email        string
 	FirstName    string
 	LastName     string
-	PictureKey   sql.NullString
+	AvatarKey    sql.NullString
 	PasswordHash string
 	VerifiedAt   sql.NullTime
 	CreatedAt    time.Time
@@ -20,9 +20,9 @@ type customerRow struct {
 }
 
 func toRow(c *customer.Customer) customerRow {
-	var pictureKey sql.NullString
-	if c.PictureKey() != "" {
-		pictureKey = sql.NullString{String: c.PictureKey(), Valid: true}
+	var avatarKey sql.NullString
+	if c.AvatarKey() != "" {
+		avatarKey = sql.NullString{String: c.AvatarKey(), Valid: true}
 	}
 
 	var verifiedAt sql.NullTime
@@ -35,7 +35,7 @@ func toRow(c *customer.Customer) customerRow {
 		Email:        c.Email(),
 		FirstName:    c.FirstName(),
 		LastName:     c.LastName(),
-		PictureKey:   pictureKey,
+		AvatarKey:    avatarKey,
 		PasswordHash: c.PasswordHash(),
 		VerifiedAt:   verifiedAt,
 		CreatedAt:    c.CreatedAt(),
@@ -44,9 +44,9 @@ func toRow(c *customer.Customer) customerRow {
 }
 
 func toEntity(r customerRow) *customer.Customer {
-	var pictureKey string
-	if r.PictureKey.Valid {
-		pictureKey = r.PictureKey.String
+	var avatarKey string
+	if r.AvatarKey.Valid {
+		avatarKey = r.AvatarKey.String
 	}
 
 	var verifiedAt time.Time
@@ -59,7 +59,7 @@ func toEntity(r customerRow) *customer.Customer {
 		r.Email,
 		r.FirstName,
 		r.LastName,
-		pictureKey,
+		avatarKey,
 		r.PasswordHash,
 		verifiedAt,
 		r.CreatedAt,

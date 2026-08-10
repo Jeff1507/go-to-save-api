@@ -49,10 +49,10 @@ func (repo *PostgresRepo) Save(ctx context.Context, c *customer.Customer) error 
 	_, err = tx.Exec(
 		ctx,
 		`
-		INSERT INTO customers(id, first_name, last_name, picture_key, created_at, updated_at)
+		INSERT INTO customers(id, first_name, last_name, avatar_key, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		`,
-		r.ID, r.FirstName, r.LastName, r.PictureKey, r.CreatedAt, r.UpdatedAt,
+		r.ID, r.FirstName, r.LastName, r.AvatarKey, r.CreatedAt, r.UpdatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("insert customer: %w", err)
@@ -93,10 +93,10 @@ func (repo *PostgresRepo) Update(ctx context.Context, c *customer.Customer) erro
 	_, err = tx.Exec(
 		ctx,
 		`
-		UPDATE customers SET first_name = $1, last_name = $2, picture_key = $3, updated_at = $4
+		UPDATE customers SET first_name = $1, last_name = $2, avatar_key = $3, updated_at = $4
 		WHERE id = $5
 		`,
-		r.FirstName, r.LastName, r.PictureKey, r.UpdatedAt, r.ID,
+		r.FirstName, r.LastName, r.AvatarKey, r.UpdatedAt, r.ID,
 	)
 	if err != nil {
 		return fmt.Errorf("update customer: %w", err)
@@ -130,7 +130,7 @@ func (repo *PostgresRepo) Find(ctx context.Context, id string) (*customer.Custom
 		`
 		SELECT 
 			u.id, u.email, u.password_hash, u.verified_at, 
-			c.first_name, c.last_name, c.picture_key, c.created_at, c.updated_at 
+			c.first_name, c.last_name, c.avatar_key, c.created_at, c.updated_at 
 		FROM users u 
 		INNER JOIN customers c ON c.id = u.id
 		WHERE u.id = $1
@@ -146,7 +146,7 @@ func (repo *PostgresRepo) Find(ctx context.Context, id string) (*customer.Custom
 		&r.VerifiedAt,
 		&r.FirstName,
 		&r.LastName,
-		&r.PictureKey,
+		&r.AvatarKey,
 		&r.CreatedAt,
 		&r.UpdatedAt,
 	); err != nil {
@@ -169,7 +169,7 @@ func (repo *PostgresRepo) FindByEmail(
 		`
 		SELECT 
 			u.id, u.email, u.password_hash, u.verified_at, 
-			c.first_name, c.last_name, c.picture_key, c.created_at, c.updated_at 
+			c.first_name, c.last_name, c.avatar_key, c.created_at, c.updated_at 
 		FROM users u 
 		INNER JOIN customers c ON c.id = u.id 
 		WHERE u.email = $1
@@ -185,7 +185,7 @@ func (repo *PostgresRepo) FindByEmail(
 		&r.VerifiedAt,
 		&r.FirstName,
 		&r.LastName,
-		&r.PictureKey,
+		&r.AvatarKey,
 		&r.CreatedAt,
 		&r.UpdatedAt,
 	); err != nil {
