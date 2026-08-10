@@ -5,33 +5,58 @@ import (
 	"net/http"
 
 	"github.com/Jeff1507/go-to-save-api/internal/core/customer"
-	"github.com/Jeff1507/go-to-save-api/internal/infra/api/render"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/auth/otp"
+	"github.com/Jeff1507/go-to-save-api/internal/infra/validation"
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
-type HandlerFunc func(w http.ResponseWriter, r *http.Request) error
+func ErrorHandler(c *gin.Context) {
+	c.Next()
 
-func ErrorHandler(h HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := h(w, r); err != nil {
-			handleError(w, err)
-		}
+	if len(c.Errors) == 0 {
+		return
 	}
+
+	err := c.Errors.Last().Err
+
+	if vErrs, ok := errors.AsType[validator.ValidationErrors](err); ok {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"errors": validation.TranslateValidationErrors(vErrs),
+		})
+		return
+	}
+
+	if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{
+			"error": "Arquivo muito grande",
+		})
+		return
+	}
+
+	status, msg := domainError(err)
+
+	c.JSON(status, gin.H{"error": msg})
 }
 
-func handleError(w http.ResponseWriter, err error) {
+func domainError(err error) (int, string) {
 	switch {
 	case errors.Is(err, customer.ErrEmailAlreadyInUse):
-		render.Error(w, http.StatusConflict, "Conta já cadastrada")
+		return http.StatusConflict, "Conta já cadastrada"
+
 	case errors.Is(err, customer.ErrInvalidCredentials):
-		render.Error(w, http.StatusUnauthorized, "Credenciais inválidas")
+		return http.StatusUnauthorized, "Credenciais inválidas"
+
 	case errors.Is(err, customer.ErrNotFound):
-		render.Error(w, http.StatusNotFound, "Usuário não encontrado")
+		return http.StatusNotFound, "Usuário não encontrado"
+
 	case errors.Is(err, customer.ErrInvalidImageFormat):
-		render.Error(w, http.StatusUnsupportedMediaType, "Formato de imagem não suportado")
+		return http.StatusUnsupportedMediaType, "Formato de imagem não suportado"
+
 	case errors.Is(err, otp.ErrInvalidOTP):
-		render.Error(w, http.StatusUnprocessableEntity, "Código inválido ou expirado")
+		return http.StatusUnprocessableEntity, "Código inválido ou expirado"
+
 	default:
-		render.InternalServerError(w)
+		return http.StatusInternalServerError, "Erro interno no servidor"
 	}
 }
