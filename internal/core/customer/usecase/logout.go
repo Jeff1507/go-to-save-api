@@ -8,17 +8,17 @@ import (
 )
 
 type Logout struct {
-	sessionManager session.Manager
+	sessions session.Manager
 }
 
-func NewLogout(sessionManager session.Manager) *Logout {
+func NewLogout(sessions session.Manager) *Logout {
 	return &Logout{
-		sessionManager: sessionManager,
+		sessions: sessions,
 	}
 }
 
 func (uc *Logout) Execute(ctx context.Context, sessionID string) error {
-	if err := uc.sessionManager.Revoke(ctx, sessionID); err != nil {
+	if err := uc.sessions.Revoke(ctx, sessionID); err != nil {
 		return fmt.Errorf("revoke session: %w", err)
 	}
 
