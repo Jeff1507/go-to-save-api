@@ -53,6 +53,9 @@ func domainError(err error) (int, string) {
 	case errors.Is(err, customer.ErrInvalidImageFormat):
 		return http.StatusUnsupportedMediaType, "Formato de imagem não suportado"
 
+	case errors.Is(err, customer.ErrIncorrectPassword):
+		return http.StatusUnprocessableEntity, "Senha atual incorreta"
+
 	case errors.Is(err, otp.ErrInvalidOTP):
 		return http.StatusUnprocessableEntity, "Código inválido ou expirado"
 

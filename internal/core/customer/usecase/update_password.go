@@ -44,7 +44,7 @@ func (uc *UpdatePassword) Execute(ctx context.Context, input UpdatePasswordInput
 
 	passwordsMatch := hash.Compare(cust.PasswordHash(), input.Password)
 	if !passwordsMatch {
-		return customer.ErrInvalidCredentials
+		return customer.ErrIncorrectPassword
 	}
 
 	passwordHash, err := hash.Generate(input.NewPassword)

@@ -37,7 +37,7 @@ func (h *GetProfileHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	output, err := h.getProfile.Execute(c.Request.Context(), id)
+	profile, err := h.getProfile.Execute(c.Request.Context(), id)
 	if err != nil {
 		c.Error(err)
 		return
@@ -45,14 +45,14 @@ func (h *GetProfileHandler) Handle(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": ProfileResponse{
-			ID:         output.ID,
-			Email:      output.Email,
-			FirstName:  output.FirstName,
-			LastName:   output.LastName,
-			AvatarURL:  output.AvatarURL,
-			VerifiedAt: output.VerifiedAt,
-			CreatedAt:  output.CreatedAt,
-			UpdatedAt:  output.UpdatedAt,
+			ID:         profile.ID,
+			Email:      profile.Email,
+			FirstName:  profile.FirstName,
+			LastName:   profile.LastName,
+			AvatarURL:  profile.AvatarURL,
+			VerifiedAt: profile.VerifiedAt,
+			CreatedAt:  profile.CreatedAt,
+			UpdatedAt:  profile.UpdatedAt,
 		},
 	})
 }

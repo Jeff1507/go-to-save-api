@@ -7,4 +7,5 @@ var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrNotFound           = errors.New("customer not found")
 	ErrInvalidImageFormat = errors.New("invalid image format")
+	ErrIncorrectPassword  = errors.New("incorrect current password")
 )
