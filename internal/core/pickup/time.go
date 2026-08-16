@@ -2,7 +2,6 @@ package pickup
 
 import (
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -31,7 +30,7 @@ func (t Time) Duration() time.Duration {
 }
 
 func (t Time) String() string {
-	return fmt.Sprintf("%02d:%02d", t.hour, t.minute)
+	return FormatTime(t.hour, t.minute)
 }
 
 func (t Time) Hour() int {
