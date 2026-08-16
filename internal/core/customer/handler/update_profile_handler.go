@@ -27,14 +27,14 @@ func NewUpdateProfileHandler(updateProfile *usecase.UpdateProfile) *UpdateProfil
 func (h *UpdateProfileHandler) Handle(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, storage.MaxUploadSize)
 
+	if c.Request.MultipartForm != nil {
+		defer c.Request.MultipartForm.RemoveAll()
+	}
+
 	var body UpdateProfileRequest
 	if err := c.ShouldBind(&body); err != nil {
 		c.Error(err)
 		return
-	}
-
-	if c.Request.MultipartForm != nil {
-		defer c.Request.MultipartForm.RemoveAll()
 	}
 
 	var avatar *usecase.UpdateProfileAvatarInput
