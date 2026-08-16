@@ -16,7 +16,7 @@ func NewInMemRepo() *InMemRepo {
 	}
 }
 
-func (repo *InMemRepo) isPickupTemplateExists(t *pickup.Template) bool {
+func (repo *InMemRepo) isTemplateExists(t *pickup.Template) bool {
 	for _, templ := range repo.templates {
 		if templ.ID() == t.ID() {
 			continue
@@ -35,7 +35,7 @@ func (repo *InMemRepo) Save(ctx context.Context, t *pickup.Template) error {
 		return pickup.ErrTemplateAlreadyExists
 	}
 
-	if repo.isPickupTemplateExists(t) {
+	if repo.isTemplateExists(t) {
 		return pickup.ErrTemplateAlreadyExists
 	}
 
@@ -45,7 +45,7 @@ func (repo *InMemRepo) Save(ctx context.Context, t *pickup.Template) error {
 }
 
 func (repo *InMemRepo) Update(ctx context.Context, t *pickup.Template) error {
-	if repo.isPickupTemplateExists(t) {
+	if repo.isTemplateExists(t) {
 		return pickup.ErrTemplateAlreadyExists
 	}
 

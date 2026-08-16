@@ -2,12 +2,12 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 
 	"github.com/Jeff1507/go-to-save-api/internal/core/pickup"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/db"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -35,7 +35,7 @@ func (repo *PostgresRepo) Save(ctx context.Context, t *pickup.Template) error {
 			return pickup.ErrTemplateAlreadyExists
 		}
 
-		return fmt.Errorf("insert pickup template: %v", err)
+		return fmt.Errorf("insert pickup template: %w", err)
 	}
 
 	return nil
@@ -56,7 +56,7 @@ func (repo *PostgresRepo) Update(ctx context.Context, t *pickup.Template) error 
 			return pickup.ErrTemplateAlreadyExists
 		}
 
-		return fmt.Errorf("update pickup template: %v", err)
+		return fmt.Errorf("update pickup template: %w", err)
 	}
 
 	return nil
@@ -71,7 +71,7 @@ func (repo *PostgresRepo) Delete(ctx context.Context, id string) error {
 		id,
 	)
 	if err != nil {
-		return fmt.Errorf("delete pickup template: %v", err)
+		return fmt.Errorf("delete pickup template: %w", err)
 	}
 
 	return nil
@@ -88,7 +88,7 @@ func (repo *PostgresRepo) Find(ctx context.Context, id string) (*pickup.Template
 		id,
 	)
 
-	var r pickupTemplateRow
+	var r templateRow
 	if err := row.Scan(
 		&r.ID,
 		&r.StoreID,
@@ -96,11 +96,11 @@ func (repo *PostgresRepo) Find(ctx context.Context, id string) (*pickup.Template
 		&r.Start,
 		&r.End,
 	); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, pickup.ErrTemplateNotFound
 		}
 
-		return nil, fmt.Errorf("scan pickup template: %v", err)
+		return nil, fmt.Errorf("scan pickup template: %w", err)
 	}
 
 	return toEntity(r), nil

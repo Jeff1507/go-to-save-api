@@ -6,7 +6,7 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/core/pickup"
 )
 
-type pickupTemplateRow struct {
+type templateRow struct {
 	ID      string
 	StoreID string
 	Name    string
@@ -14,7 +14,7 @@ type pickupTemplateRow struct {
 	End     time.Time
 }
 
-func toEntity(r pickupTemplateRow) *pickup.Template {
+func toEntity(r templateRow) *pickup.Template {
 	start, _ := pickup.NewTime(r.Start.Hour(), r.Start.Minute())
 	end, _ := pickup.NewTime(r.End.Hour(), r.End.Minute())
 
