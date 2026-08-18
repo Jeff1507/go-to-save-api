@@ -11,7 +11,7 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/infra/storage"
 )
 
-type UpdateProfileAvatarInput struct {
+type AvatarInput struct {
 	Content     io.Reader
 	ContentType string
 }
@@ -20,7 +20,7 @@ type UpdateProfileInput struct {
 	ID        string
 	FirstName string
 	LastName  string
-	Avatar    *UpdateProfileAvatarInput
+	Avatar    *AvatarInput
 }
 
 type UpdateProfile struct {
