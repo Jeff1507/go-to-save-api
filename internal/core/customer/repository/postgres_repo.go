@@ -129,8 +129,15 @@ func (repo *PostgresRepo) Find(ctx context.Context, id string) (*customer.Custom
 		ctx,
 		`
 		SELECT 
-			u.id, u.email, u.password_hash, u.verified_at, 
-			c.first_name, c.last_name, c.avatar_key, c.created_at, c.updated_at 
+			u.id, 
+			u.email, 
+			u.password_hash, 
+			u.verified_at, 
+			c.first_name, 
+			c.last_name, 
+			c.avatar_key, 
+			c.created_at, 
+			c.updated_at 
 		FROM users u 
 		INNER JOIN customers c ON c.id = u.id
 		WHERE u.id = $1
@@ -168,8 +175,15 @@ func (repo *PostgresRepo) FindByEmail(
 		ctx,
 		`
 		SELECT 
-			u.id, u.email, u.password_hash, u.verified_at, 
-			c.first_name, c.last_name, c.avatar_key, c.created_at, c.updated_at 
+			u.id, 
+			u.email, 
+			u.password_hash, 
+			u.verified_at, 
+			c.first_name, 
+			c.last_name, 
+			c.avatar_key, 
+			c.created_at, 
+			c.updated_at 
 		FROM users u 
 		INNER JOIN customers c ON c.id = u.id 
 		WHERE u.email = $1
