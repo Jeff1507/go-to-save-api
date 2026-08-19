@@ -54,11 +54,11 @@ func (h *UpdateTemplateHandler) Handle(c *gin.Context) {
 		ID:      params.ID,
 		StoreID: storeID,
 		Name:    body.Name,
-		Start: usecase.UpdateTemplateTimeInput{
+		Start: usecase.TimeInput{
 			Hour:   start.Hour(),
 			Minute: start.Minute(),
 		},
-		End: usecase.UpdateTemplateTimeInput{
+		End: usecase.TimeInput{
 			Hour:   end.Hour(),
 			Minute: end.Minute(),
 		},

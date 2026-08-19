@@ -47,11 +47,11 @@ func (h *CreateTemplateHandler) Handle(c *gin.Context) {
 	output, err := h.createTemplate.Execute(c.Request.Context(), usecase.CreateTemplateInput{
 		StoreID: storeID,
 		Name:    body.Name,
-		Start: usecase.CreateTemplateTimeInput{
+		Start: usecase.TimeInput{
 			Hour:   start.Hour(),
 			Minute: start.Minute(),
 		},
-		End: usecase.CreateTemplateTimeInput{
+		End: usecase.TimeInput{
 			Hour:   end.Hour(),
 			Minute: end.Minute(),
 		},

@@ -8,16 +8,11 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/pkg/uuid"
 )
 
-type CreateTemplateTimeInput struct {
-	Hour   int
-	Minute int
-}
-
 type CreateTemplateInput struct {
 	StoreID string
 	Name    string
-	Start   CreateTemplateTimeInput
-	End     CreateTemplateTimeInput
+	Start   TimeInput
+	End     TimeInput
 }
 
 type CreateTemplateOutput struct {

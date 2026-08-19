@@ -7,17 +7,12 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/core/pickup"
 )
 
-type UpdateTemplateTimeInput struct {
-	Hour   int
-	Minute int
-}
-
 type UpdateTemplateInput struct {
 	ID      string
 	StoreID string
 	Name    string
-	Start   UpdateTemplateTimeInput
-	End     UpdateTemplateTimeInput
+	Start   TimeInput
+	End     TimeInput
 }
 
 type UpdateTemplate struct {
