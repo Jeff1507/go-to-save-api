@@ -10,7 +10,7 @@ type Store struct {
 	email        string
 	name         string
 	cnpj         string
-	pictureKey   string // Opcional
+	avatarKey    string // Opcional
 	description  string // Opcional
 	passwordHash string
 	address      Address
@@ -69,7 +69,7 @@ func From(
 	email string,
 	name string,
 	cnpj string,
-	pictureKey string,
+	avatarKey string,
 	description string,
 	passwordHash string,
 	address Address,
@@ -82,7 +82,7 @@ func From(
 		email:        email,
 		name:         name,
 		cnpj:         cnpj,
-		pictureKey:   pictureKey,
+		avatarKey:    avatarKey,
 		description:  description,
 		passwordHash: passwordHash,
 		address:      address,
@@ -117,6 +117,7 @@ func (s *Store) ChangeEmail(email string, now time.Time) error {
 	}
 
 	s.email = email
+	s.verifiedAt = time.Time{}
 	s.updatedAt = now
 
 	return nil
@@ -137,41 +138,22 @@ func (s *Store) ChangeName(name string, now time.Time) error {
 	return nil
 }
 
-func (s *Store) ChangeCNPJ(cnpj string, now time.Time) error {
-	if cnpj == "" {
-		return errors.New("cnpj is required")
-	}
-
+func (s *Store) ChangeAvatar(avatarKey string, now time.Time) error {
 	if now.IsZero() {
 		return errors.New("now is not set")
 	}
 
-	s.cnpj = cnpj
+	s.avatarKey = avatarKey
 	s.updatedAt = now
 
 	return nil
 }
 
-func (s *Store) ChangePicture(pictureKey string, now time.Time) error {
-	if pictureKey == "" {
-		return nil
-	}
-
-	if now.IsZero() {
-		return errors.New("now is not set")
-	}
-
-	s.pictureKey = pictureKey
-	s.updatedAt = now
-
-	return nil
+func (s *Store) RemoveAvatar(now time.Time) error {
+	return s.ChangeAvatar("", now)
 }
 
 func (s *Store) ChangeDescription(description string, now time.Time) error {
-	if description == "" {
-		return nil
-	}
-
 	if now.IsZero() {
 		return errors.New("now is not set")
 	}
@@ -182,7 +164,7 @@ func (s *Store) ChangeDescription(description string, now time.Time) error {
 	return nil
 }
 
-func (s *Store) ChangePasswordHash(passwordHash string, now time.Time) error {
+func (s *Store) ChangePassword(passwordHash string, now time.Time) error {
 	if passwordHash == "" {
 		return errors.New("password hash is required")
 	}
@@ -224,8 +206,8 @@ func (s Store) CNPJ() string {
 	return s.cnpj
 }
 
-func (s Store) PictureKey() string {
-	return s.pictureKey
+func (s Store) AvatarKey() string {
+	return s.avatarKey
 }
 
 func (s Store) Description() string {
