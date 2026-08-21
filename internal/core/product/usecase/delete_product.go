@@ -7,6 +7,11 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/core/product"
 )
 
+type DeleteProductInput struct {
+	ID      string
+	StoreID string
+}
+
 type DeleteProduct struct {
 	productRepo product.Repository
 }
@@ -17,9 +22,18 @@ func NewDeleteProduct(productRepo product.Repository) *DeleteProduct {
 	}
 }
 
-func (uc *DeleteProduct) Execute(ctx context.Context, id string) error {
-	if err := uc.productRepo.Delete(ctx, id); err != nil {
-		return fmt.Errorf("delete product by id: %v", err)
+func (uc *DeleteProduct) Execute(ctx context.Context, input DeleteProductInput) error {
+	prod, err := uc.productRepo.Find(ctx, input.ID)
+	if err != nil {
+		return fmt.Errorf("find product by id: %w", err)
+	}
+
+	if prod.StoreID() != input.StoreID {
+		return product.ErrNotFound
+	}
+
+	if err := uc.productRepo.Delete(ctx, input.ID); err != nil {
+		return fmt.Errorf("delete product: %w", err)
 	}
 
 	// não deleta a imagem antiga — pode estar em uso por bags existentes
