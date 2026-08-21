@@ -2,12 +2,12 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 
 	"github.com/Jeff1507/go-to-save-api/internal/core/product"
 	"github.com/Jeff1507/go-to-save-api/internal/infra/db"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -37,7 +37,7 @@ func (repo *PostgresRepo) Save(ctx context.Context, p *product.Product) error {
 			return product.ErrAlreadyExists
 		}
 
-		return fmt.Errorf("insert product: %v", err)
+		return fmt.Errorf("insert product: %w", err)
 	}
 
 	return nil
@@ -60,7 +60,7 @@ func (repo *PostgresRepo) Update(ctx context.Context, p *product.Product) error 
 			return product.ErrAlreadyExists
 		}
 
-		return fmt.Errorf("update product: %v", err)
+		return fmt.Errorf("update product: %w", err)
 	}
 
 	return nil
@@ -75,7 +75,7 @@ func (repo *PostgresRepo) Delete(ctx context.Context, id string) error {
 		id,
 	)
 	if err != nil {
-		return fmt.Errorf("delete product: %v", err)
+		return fmt.Errorf("delete product: %w", err)
 	}
 
 	return nil
@@ -101,11 +101,11 @@ func (repo *PostgresRepo) Find(ctx context.Context, id string) (*product.Product
 		&r.CreatedAt,
 		&r.UpdatedAt,
 	); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, product.ErrNotFound
 		}
 
-		return nil, fmt.Errorf("scan product: %v", err)
+		return nil, fmt.Errorf("scan product: %w", err)
 	}
 
 	return toEntity(r), nil
@@ -122,7 +122,7 @@ func (repo *PostgresRepo) List(ctx context.Context, ids []string) ([]*product.Pr
 		ids,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("select products: %v", err)
+		return nil, fmt.Errorf("select products: %w", err)
 	}
 	defer rows.Close()
 
@@ -137,14 +137,14 @@ func (repo *PostgresRepo) List(ctx context.Context, ids []string) ([]*product.Pr
 			&r.CreatedAt,
 			&r.UpdatedAt,
 		); err != nil {
-			return nil, fmt.Errorf("scan product: %v", err)
+			return nil, fmt.Errorf("scan product: %w", err)
 		}
 
 		products = append(products, toEntity(r))
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate rows: %v", err)
+		return nil, fmt.Errorf("iterate rows: %w", err)
 	}
 
 	return products, nil
