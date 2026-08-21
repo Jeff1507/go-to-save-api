@@ -8,8 +8,8 @@ import (
 
 type CustomerRoutes struct {
 	auth              *middleware.Authentication
-	get               *handler.GetProfileHandler
-	update            *handler.UpdateProfileHandler
+	getMe             *handler.GetProfileHandler
+	updateMe          *handler.UpdateProfileHandler
 	signup            *handler.SignupHandler
 	login             *handler.LoginHandler
 	emailVerification *handler.RequestEmailVerificationHandler
@@ -18,14 +18,16 @@ type CustomerRoutes struct {
 	resetPassword     *handler.ResetPasswordHandler
 	logout            *handler.LogoutHandler
 	logoutAll         *handler.LogoutAllHandler
+	updateAvatar      *handler.UpdateAvatarHandler
+	removeAvatar      *handler.RemoveAvatarHandler
 	updateEmail       *handler.UpdateEmailHandler
 	updatePassword    *handler.UpdatePasswordHandler
 }
 
 func NewCustomerRoutes(
 	auth *middleware.Authentication,
-	get *handler.GetProfileHandler,
-	update *handler.UpdateProfileHandler,
+	getMe *handler.GetProfileHandler,
+	updateMe *handler.UpdateProfileHandler,
 	signup *handler.SignupHandler,
 	login *handler.LoginHandler,
 	emailVerification *handler.RequestEmailVerificationHandler,
@@ -34,13 +36,15 @@ func NewCustomerRoutes(
 	resetPassword *handler.ResetPasswordHandler,
 	logout *handler.LogoutHandler,
 	logoutAll *handler.LogoutAllHandler,
+	updateAvatar *handler.UpdateAvatarHandler,
+	removeAvatar *handler.RemoveAvatarHandler,
 	updateEmail *handler.UpdateEmailHandler,
 	updatePassword *handler.UpdatePasswordHandler,
 ) *CustomerRoutes {
 	return &CustomerRoutes{
 		auth:              auth,
-		get:               get,
-		update:            update,
+		getMe:             getMe,
+		updateMe:          updateMe,
 		signup:            signup,
 		login:             login,
 		emailVerification: emailVerification,
@@ -49,6 +53,8 @@ func NewCustomerRoutes(
 		resetPassword:     resetPassword,
 		logout:            logout,
 		logoutAll:         logoutAll,
+		updateAvatar:      updateAvatar,
+		removeAvatar:      removeAvatar,
 		updateEmail:       updateEmail,
 		updatePassword:    updatePassword,
 	}
@@ -57,6 +63,7 @@ func NewCustomerRoutes(
 func (r *CustomerRoutes) Register(router *gin.Engine) {
 	customers := router.Group("/customers")
 	customers.Use(handler.ErrorHandler)
+	customers.Use(middleware.MaxRequestBodySize(5 << 20))
 
 	{
 		// Rotas públicas
@@ -72,8 +79,10 @@ func (r *CustomerRoutes) Register(router *gin.Engine) {
 		// Rotas privadas
 		customers.Use(r.auth.VerifyCustomer)
 
-		customers.GET("/me", r.get.Handle)
-		customers.PUT("/me", r.update.Handle)
+		customers.GET("/me", r.getMe.Handle)
+		customers.PATCH("/me", r.updateMe.Handle)
+		customers.PUT("/me/avatar", r.updateAvatar.Handle)
+		customers.DELETE("/me/avatar", r.removeAvatar.Handle)
 		customers.PATCH("/me/email", r.updateEmail.Handle)
 		customers.PATCH("/me/password", r.updatePassword.Handle)
 		customers.POST("/logout", r.logout.Handle)
