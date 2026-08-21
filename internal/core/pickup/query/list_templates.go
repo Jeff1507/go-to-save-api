@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Template struct {
+type TemplateOutput struct {
 	ID    string
 	Name  string
 	Start string
@@ -26,7 +26,7 @@ func NewListTemplates(pg *pgxpool.Pool) *ListTemplates {
 	}
 }
 
-func (qry *ListTemplates) Execute(ctx context.Context, storeID string) ([]Template, error) {
+func (qry *ListTemplates) Execute(ctx context.Context, storeID string) ([]TemplateOutput, error) {
 	rows, err := qry.pg.Query(
 		ctx,
 		`
@@ -42,26 +42,26 @@ func (qry *ListTemplates) Execute(ctx context.Context, storeID string) ([]Templa
 	}
 	defer rows.Close()
 
-	templates := make([]Template, 0)
+	templates := make([]TemplateOutput, 0)
 	for rows.Next() {
 		var (
-			template Template
-			start    time.Time
-			end      time.Time
+			templ TemplateOutput
+			start time.Time
+			end   time.Time
 		)
 		if err := rows.Scan(
-			&template.ID,
-			&template.Name,
+			&templ.ID,
+			&templ.Name,
 			&start,
 			&end,
 		); err != nil {
 			return nil, fmt.Errorf("scan pickup template: %w", err)
 		}
 
-		template.Start = pickup.FormatTime(start.Hour(), start.Minute())
-		template.End = pickup.FormatTime(end.Hour(), end.Minute())
+		templ.Start = pickup.FormatTime(start.Hour(), start.Minute())
+		templ.End = pickup.FormatTime(end.Hour(), end.Minute())
 
-		templates = append(templates, template)
+		templates = append(templates, templ)
 	}
 
 	if err := rows.Err(); err != nil {

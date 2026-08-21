@@ -13,7 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Profile struct {
+type ProfileOutput struct {
 	ID         string
 	Email      string
 	FirstName  string
@@ -36,7 +36,7 @@ func NewGetProfile(pg *pgxpool.Pool, storage storage.Storage) *GetProfile {
 	}
 }
 
-func (qry *GetProfile) Execute(ctx context.Context, id string) (Profile, error) {
+func (qry *GetProfile) Execute(ctx context.Context, id string) (ProfileOutput, error) {
 	row := qry.pg.QueryRow(
 		ctx,
 		`
@@ -57,7 +57,7 @@ func (qry *GetProfile) Execute(ctx context.Context, id string) (Profile, error) 
 	)
 
 	var (
-		profile    Profile
+		profile    ProfileOutput
 		avatarKey  sql.NullString
 		verifiedAt sql.NullTime
 	)
@@ -72,10 +72,10 @@ func (qry *GetProfile) Execute(ctx context.Context, id string) (Profile, error) 
 		&profile.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return Profile{}, customer.ErrNotFound
+			return ProfileOutput{}, customer.ErrNotFound
 		}
 
-		return Profile{}, fmt.Errorf("scan customer: %w", err)
+		return ProfileOutput{}, fmt.Errorf("scan customer: %w", err)
 	}
 
 	if avatarKey.Valid {
