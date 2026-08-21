@@ -133,10 +133,6 @@ func (c *Customer) ChangeName(firstName, lastName string, now time.Time) error {
 }
 
 func (c *Customer) ChangeAvatar(avatarKey string, now time.Time) error {
-	if avatarKey == "" {
-		return nil
-	}
-
 	if now.IsZero() {
 		return errors.New("now is not set")
 	}
@@ -145,6 +141,10 @@ func (c *Customer) ChangeAvatar(avatarKey string, now time.Time) error {
 	c.updatedAt = now
 
 	return nil
+}
+
+func (c *Customer) RemoveAvatar(now time.Time) error {
+	return c.ChangeAvatar("", now)
 }
 
 func (c *Customer) ChangePassword(passwordHash string, now time.Time) error {
