@@ -68,10 +68,6 @@ func (p *Product) ChangeName(name string, now time.Time) error {
 }
 
 func (p *Product) ChangeImage(imageKey string, now time.Time) error {
-	if imageKey == "" {
-		return nil
-	}
-
 	if now.IsZero() {
 		return errors.New("now is not set")
 	}
@@ -80,6 +76,10 @@ func (p *Product) ChangeImage(imageKey string, now time.Time) error {
 	p.updatedAt = now
 
 	return nil
+}
+
+func (p *Product) RemoveImage(now time.Time) error {
+	return p.ChangeImage("", now)
 }
 
 func (p Product) ID() string {
