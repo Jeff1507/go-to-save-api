@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/Jeff1507/go-to-save-api/internal/common/clock"
 	"github.com/Jeff1507/go-to-save-api/internal/core/product"
@@ -12,15 +11,10 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/pkg/uuid"
 )
 
-type CreateProductImageInput struct {
-	Content     io.Reader
-	ContentType string
-}
-
 type CreateProductInput struct {
 	StoreID string
 	Name    string
-	Image   *CreateProductImageInput
+	Image   ImageInput
 }
 
 type CreateProductOutput struct {
@@ -28,20 +22,20 @@ type CreateProductOutput struct {
 }
 
 type CreateProduct struct {
-	clock       clock.Clock
-	fileStorage storage.Storage
 	productRepo product.Repository
+	storage     storage.Storage
+	clock       clock.Clock
 }
 
 func NewCreateProduct(
-	clock clock.Clock,
-	fileStorage storage.Storage,
 	productRepo product.Repository,
+	storage storage.Storage,
+	clock clock.Clock,
 ) *CreateProduct {
 	return &CreateProduct{
-		clock:       clock,
-		fileStorage: fileStorage,
 		productRepo: productRepo,
+		storage:     storage,
+		clock:       clock,
 	}
 }
 
@@ -51,9 +45,9 @@ func (uc *CreateProduct) Execute(
 ) (CreateProductOutput, error) {
 	now := uc.clock.Now()
 
-	var imgKey string
-	if input.Image != nil {
-		key, err := uc.fileStorage.Upload(
+	var imageKey string
+	if input.Image.Content != nil && input.Image.ContentType != "" {
+		key, err := uc.storage.Upload(
 			input.Image.Content,
 			input.Image.ContentType,
 			storage.ProductsPath,
@@ -63,25 +57,20 @@ func (uc *CreateProduct) Execute(
 				return CreateProductOutput{}, product.ErrInvalidImageFormat
 			}
 
-			return CreateProductOutput{}, fmt.Errorf("upload image: %v", err)
+			return CreateProductOutput{}, fmt.Errorf("upload image: %w", err)
 		}
 
-		imgKey = key
+		imageKey = key
 	}
 
-	prod, err := product.New(uuid.Generate(), input.StoreID, input.Name, imgKey, now)
+	prod, err := product.New(uuid.Generate(), input.StoreID, input.Name, imageKey, now)
 	if err != nil {
-		return CreateProductOutput{}, fmt.Errorf("new product: %v", err)
+		return CreateProductOutput{}, fmt.Errorf("new product: %w", err)
 	}
 
 	if err := uc.productRepo.Save(ctx, prod); err != nil {
-		uc.fileStorage.Delete(imgKey)
-
-		if errors.Is(err, product.ErrAlreadyExists) {
-			return CreateProductOutput{}, fmt.Errorf("save product: %w", err)
-		}
-
-		return CreateProductOutput{}, fmt.Errorf("save product: %v", err)
+		uc.storage.Delete(imageKey)
+		return CreateProductOutput{}, fmt.Errorf("save product: %w", err)
 	}
 
 	return CreateProductOutput{
