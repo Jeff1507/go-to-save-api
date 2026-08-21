@@ -37,8 +37,8 @@ func (r *PickupTemplateRoutes) Register(router *gin.Engine) {
 	{
 		pickupTemplates.Use(r.auth.VerifyStore)
 
-		pickupTemplates.POST("/", r.create.Handle)
-		pickupTemplates.GET("/", r.list.Handle)
+		pickupTemplates.POST("", r.create.Handle)
+		pickupTemplates.GET("", r.list.Handle)
 		pickupTemplates.PUT("/:id", r.update.Handle)
 		pickupTemplates.DELETE("/:id", r.delete.Handle)
 	}
