@@ -24,7 +24,7 @@ type storeRow struct {
 	Email        string
 	Name         string
 	CNPJ         string
-	PictureKey   sql.NullString
+	AvatarKey    sql.NullString
 	Description  sql.NullString
 	PasswordHash string
 	Address      addressRow
@@ -34,9 +34,9 @@ type storeRow struct {
 }
 
 func toRow(s *store.Store) storeRow {
-	var pictureKey sql.NullString
-	if s.PictureKey() != "" {
-		pictureKey = sql.NullString{String: s.PictureKey(), Valid: true}
+	var avatarKey sql.NullString
+	if s.AvatarKey() != "" {
+		avatarKey = sql.NullString{String: s.AvatarKey(), Valid: true}
 	}
 
 	var description sql.NullString
@@ -45,7 +45,7 @@ func toRow(s *store.Store) storeRow {
 	}
 
 	var verifiedAt sql.NullTime
-	if !s.VerifiedAt().IsZero() {
+	if s.IsVerified() {
 		verifiedAt = sql.NullTime{Time: s.VerifiedAt(), Valid: true}
 	}
 
@@ -71,7 +71,7 @@ func toRow(s *store.Store) storeRow {
 		Email:        s.Email(),
 		Name:         s.Name(),
 		CNPJ:         s.CNPJ(),
-		PictureKey:   pictureKey,
+		AvatarKey:    avatarKey,
 		Description:  description,
 		PasswordHash: s.PasswordHash(),
 		Address:      address,
@@ -79,4 +79,32 @@ func toRow(s *store.Store) storeRow {
 		CreatedAt:    s.CreatedAt(),
 		UpdatedAt:    s.UpdatedAt(),
 	}
+}
+
+func toEntity(r storeRow) *store.Store {
+	address, _ := store.NewAddress(
+		r.Address.PostalCode,
+		r.Address.Street,
+		r.Address.Number,
+		r.Address.Neighborhood,
+		r.Address.Complement.String,
+		r.Address.City,
+		r.Address.State,
+		r.Address.Latitude,
+		r.Address.Longitude,
+	)
+
+	return store.From(
+		r.ID,
+		r.Email,
+		r.Name,
+		r.CNPJ,
+		r.AvatarKey.String,
+		r.Description.String,
+		r.PasswordHash,
+		address,
+		r.VerifiedAt.Time,
+		r.CreatedAt,
+		r.UpdatedAt,
+	)
 }
