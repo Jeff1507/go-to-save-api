@@ -44,24 +44,14 @@ func toRow(c *customer.Customer) customerRow {
 }
 
 func toEntity(r customerRow) *customer.Customer {
-	var avatarKey string
-	if r.AvatarKey.Valid {
-		avatarKey = r.AvatarKey.String
-	}
-
-	var verifiedAt time.Time
-	if r.VerifiedAt.Valid {
-		verifiedAt = r.VerifiedAt.Time
-	}
-
 	return customer.From(
 		r.ID,
 		r.Email,
 		r.FirstName,
 		r.LastName,
-		avatarKey,
+		r.AvatarKey.String,
 		r.PasswordHash,
-		verifiedAt,
+		r.VerifiedAt.Time,
 		r.CreatedAt,
 		r.UpdatedAt,
 	)
