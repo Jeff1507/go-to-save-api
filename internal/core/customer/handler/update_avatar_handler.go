@@ -20,8 +20,6 @@ func NewUpdateAvatarHandler(updateAvatar *usecase.UpdateAvatar) *UpdateAvatarHan
 }
 
 func (h *UpdateAvatarHandler) Handle(c *gin.Context) {
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, storage.MaxUploadSize)
-
 	file, _, err := c.Request.FormFile("avatar")
 	if err != nil {
 		c.Error(err)

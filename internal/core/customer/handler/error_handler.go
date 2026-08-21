@@ -34,8 +34,17 @@ func ErrorHandler(c *gin.Context) {
 		return
 	}
 
+	if errors.Is(err, http.ErrMissingFile) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Arquivo obrigatório",
+		})
+		return
+	}
+
 	code, msg := domainError(err)
-	c.JSON(code, gin.H{"error": msg})
+	c.JSON(code, gin.H{
+		"error": msg,
+	})
 }
 
 func domainError(err error) (int, string) {

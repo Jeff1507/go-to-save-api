@@ -27,7 +27,9 @@ func ErrorHandler(c *gin.Context) {
 	}
 
 	code, msg := domainError(err)
-	c.JSON(code, gin.H{"error": msg})
+	c.JSON(code, gin.H{
+		"error": msg,
+	})
 }
 
 func domainError(err error) (int, string) {
