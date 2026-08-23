@@ -10,8 +10,6 @@ const (
 	ProductsPath string = "products"
 )
 
-const MaxUploadSize = 5 << 20 // 5 MB
-
 var ErrContentTypeNotAllowed = errors.New("content type not allowed")
 
 type Storage interface {
