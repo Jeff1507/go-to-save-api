@@ -43,6 +43,14 @@ func NewTemplate(id, storeID, name string, start, end Time) (*Template, error) {
 		return nil, errors.New("name is required")
 	}
 
+	if start == (Time{}) {
+		return nil, errors.New("start is required")
+	}
+
+	if end == (Time{}) {
+		return nil, errors.New("end is required")
+	}
+
 	if err := validateInterval(start.Duration(), end.Duration()); err != nil {
 		return nil, err
 	}
@@ -77,6 +85,14 @@ func (t *Template) ChangeName(name string) error {
 }
 
 func (t *Template) ChangeTime(start, end Time) error {
+	if start == (Time{}) {
+		return errors.New("start is required")
+	}
+
+	if end == (Time{}) {
+		return errors.New("end is required")
+	}
+
 	if err := validateInterval(start.Duration(), end.Duration()); err != nil {
 		return err
 	}

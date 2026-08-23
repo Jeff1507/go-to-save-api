@@ -48,6 +48,10 @@ func New(
 		return nil, errors.New("password hash is required")
 	}
 
+	if address == (Address{}) {
+		return nil, errors.New("address is required")
+	}
+
 	if now.IsZero() {
 		return nil, errors.New("now is not set")
 	}
@@ -180,6 +184,10 @@ func (s *Store) ChangePassword(passwordHash string, now time.Time) error {
 }
 
 func (s *Store) ChangeAddress(address Address, now time.Time) error {
+	if address == (Address{}) {
+		return errors.New("address is required")
+	}
+
 	if now.IsZero() {
 		return errors.New("now is not set")
 	}
