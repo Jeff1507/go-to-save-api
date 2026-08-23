@@ -15,15 +15,20 @@ func setupValidator() {
 		panic("failed to get validator engine")
 	}
 
-	v.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		name := fld.Tag.Get("json")
-		if name == "" {
-			return fld.Name
-		}
-
-		return strings.Split(name, ",")[0]
-	})
+	v.RegisterTagNameFunc(getTagName)
 
 	v.RegisterValidation("notblank", validation.NotBlank)
 	v.RegisterValidation("time", validation.Time)
+}
+
+func getTagName(field reflect.StructField) string {
+	tags := []string{"json", "form", "uri"}
+
+	for _, tag := range tags {
+		if name, _, _ := strings.Cut(field.Tag.Get(tag), ","); name != "" {
+			return name
+		}
+	}
+
+	return field.Name
 }
