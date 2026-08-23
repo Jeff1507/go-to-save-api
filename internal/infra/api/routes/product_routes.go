@@ -36,7 +36,7 @@ func (r *ProductRoutes) Register(router *gin.Engine) {
 	products.Use(middleware.MaxRequestBodySize(5 << 20))
 
 	{
-		products.Use(r.auth.VerifyStore)
+		products.Use(r.auth.AuthenticateStore)
 
 		products.POST("", r.create.Handle)
 		products.GET("", r.list.Handle)

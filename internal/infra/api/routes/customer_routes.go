@@ -9,7 +9,6 @@ import (
 type CustomerRoutes struct {
 	auth              *middleware.Authentication
 	getMe             *handler.GetProfileHandler
-	updateMe          *handler.UpdateProfileHandler
 	signup            *handler.SignupHandler
 	login             *handler.LoginHandler
 	emailVerification *handler.RequestEmailVerificationHandler
@@ -18,6 +17,7 @@ type CustomerRoutes struct {
 	resetPassword     *handler.ResetPasswordHandler
 	logout            *handler.LogoutHandler
 	logoutAll         *handler.LogoutAllHandler
+	updateMe          *handler.UpdateProfileHandler
 	updateAvatar      *handler.UpdateAvatarHandler
 	removeAvatar      *handler.RemoveAvatarHandler
 	updateEmail       *handler.UpdateEmailHandler
@@ -27,7 +27,6 @@ type CustomerRoutes struct {
 func NewCustomerRoutes(
 	auth *middleware.Authentication,
 	getMe *handler.GetProfileHandler,
-	updateMe *handler.UpdateProfileHandler,
 	signup *handler.SignupHandler,
 	login *handler.LoginHandler,
 	emailVerification *handler.RequestEmailVerificationHandler,
@@ -36,6 +35,7 @@ func NewCustomerRoutes(
 	resetPassword *handler.ResetPasswordHandler,
 	logout *handler.LogoutHandler,
 	logoutAll *handler.LogoutAllHandler,
+	updateMe *handler.UpdateProfileHandler,
 	updateAvatar *handler.UpdateAvatarHandler,
 	removeAvatar *handler.RemoveAvatarHandler,
 	updateEmail *handler.UpdateEmailHandler,
@@ -44,7 +44,6 @@ func NewCustomerRoutes(
 	return &CustomerRoutes{
 		auth:              auth,
 		getMe:             getMe,
-		updateMe:          updateMe,
 		signup:            signup,
 		login:             login,
 		emailVerification: emailVerification,
@@ -53,6 +52,7 @@ func NewCustomerRoutes(
 		resetPassword:     resetPassword,
 		logout:            logout,
 		logoutAll:         logoutAll,
+		updateMe:          updateMe,
 		updateAvatar:      updateAvatar,
 		removeAvatar:      removeAvatar,
 		updateEmail:       updateEmail,
@@ -77,7 +77,7 @@ func (r *CustomerRoutes) Register(router *gin.Engine) {
 
 	{
 		// Rotas privadas
-		customers.Use(r.auth.VerifyCustomer)
+		customers.Use(r.auth.AuthenticateCustomer)
 
 		customers.GET("/me", r.getMe.Handle)
 		customers.PATCH("/me", r.updateMe.Handle)
