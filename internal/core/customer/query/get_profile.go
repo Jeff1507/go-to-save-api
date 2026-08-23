@@ -84,8 +84,7 @@ func (qry *GetProfile) Execute(ctx context.Context, id string) (ProfileOutput, e
 	}
 
 	if verifiedAt.Valid {
-		verifiedAt := verifiedAt.Time // Shadowing
-		profile.VerifiedAt = &verifiedAt
+		profile.VerifiedAt = &verifiedAt.Time
 	}
 
 	return profile, nil
