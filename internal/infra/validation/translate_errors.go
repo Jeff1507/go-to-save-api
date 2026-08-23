@@ -43,6 +43,9 @@ func translateTag(fErr validator.FieldError) string {
 	case "numeric":
 		return "deve conter apenas dígitos"
 
+	case "alpha":
+		return "deve conter apenas letras"
+
 	case "min":
 		if fErr.Kind() == reflect.Slice {
 			return fmt.Sprintf("deve conter no mínimo %s elemento(s)", fErr.Param())
