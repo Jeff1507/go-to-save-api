@@ -40,6 +40,12 @@ func translateTag(fErr validator.FieldError) string {
 	case "time":
 		return "deve estar no formato HH:MM"
 
+	case "latitude":
+		return "deve estar entre -90 e 90"
+
+	case "longitude":
+		return "deve estar entre -180 e 180"
+
 	case "numeric":
 		return "deve conter apenas dígitos"
 
