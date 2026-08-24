@@ -16,7 +16,7 @@ CREATE TABLE customers (
     id UUID PRIMARY KEY NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
-    picture_key TEXT,
+    avatar_key TEXT,
 
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
@@ -26,7 +26,7 @@ CREATE TABLE stores (
     id UUID PRIMARY KEY NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     cnpj VARCHAR(14) UNIQUE NOT NULL,
-    picture_key TEXT,
+    avatar_key TEXT,
     description TEXT,
 
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
