@@ -27,11 +27,12 @@ func (a Authentication) tokenFromHeader(c *gin.Context) string {
 }
 
 func (a Authentication) tokenFromCookie(c *gin.Context) string {
-	if token, err := cookie.GetSessionCookie(c); err == nil {
-		return token
+	token, err := cookie.GetSessionCookie(c)
+	if err != nil {
+		return ""
 	}
 
-	return ""
+	return token
 }
 
 func (a *Authentication) AuthenticateCustomer(c *gin.Context) {
@@ -84,6 +85,7 @@ func (a *Authentication) AuthenticateStore(c *gin.Context) {
 	}
 
 	ctx := request.WithStoreID(c.Request.Context(), storeID)
+	ctx = request.WithSessionID(ctx, sessionID)
 
 	c.Request = c.Request.WithContext(ctx)
 	c.Next()
