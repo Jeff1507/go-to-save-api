@@ -1,5 +1,7 @@
 -- TODO: Criar indexes para consultas mais rápidas --
--- TODO: Adicionar soft delete em users, stores e customers por causa da LGPD --
+-- TODO: Adicionar query para anomanizar users, stores e customers por causa da LGPD --
+
+CREATE EXTENSION IF NOT EXISTS postgis;
 
 CREATE TYPE bag_status AS ENUM ('ACTIVE', 'CLOSED');
 
@@ -33,7 +35,6 @@ CREATE TABLE stores (
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- Usar PostGIS ou indíce em latitude e longitude para consultas mais rápidas com geolocalização --
 CREATE TABLE addresses (
     store_id UUID PRIMARY KEY NOT NULL REFERENCES stores(id) ON DELETE RESTRICT,
     postal_code VARCHAR(20) NOT NULL,
@@ -45,7 +46,14 @@ CREATE TABLE addresses (
     state CHAR(2) NOT NULL,
 
     latitude NUMERIC(10, 7) NOT NULL,
-    longitude NUMERIC(10, 7) NOT NULL
+    longitude NUMERIC(10, 7) NOT NULL,
+    
+    location GEOGRAPHY(POINT, 4326) GENERATED ALWAYS AS (
+        ST_SetSRID(
+            ST_MakePoint(longitude, latitude),
+            4326
+        )::geography
+    ) STORED
 );
 
 CREATE TABLE products (
@@ -116,7 +124,7 @@ CREATE TABLE orders (
 );
 
 CREATE TABLE order_items (
-    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE RESTRICT,
     bag_id UUID NOT NULL REFERENCES bags(id) ON DELETE RESTRICT,
     quantity INTEGER NOT NULL,
     unit_price BIGINT NOT NULL,
@@ -126,7 +134,7 @@ CREATE TABLE order_items (
 
 CREATE TABLE reviews (
     id UUID PRIMARY KEY NOT NULL,
-    order_id UUID UNIQUE NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    order_id UUID UNIQUE NOT NULL REFERENCES orders(id) ON DELETE RESTRICT,
     rating SMALLINT NOT NULL,
 
     reviewed_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
