@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/Jeff1507/go-to-save-api/internal/core/pickup"
 )
 
 type Status uint8
@@ -45,7 +47,7 @@ type Bag struct {
 	originalPrice int64 // Preço em centavos
 	finalPrice    int64 // Preço em centavos
 	status        Status
-	pickupWindow  PickupWindow
+	pickupWindow  pickup.Window
 	items         []Item
 	createdAt     time.Time
 	updatedAt     time.Time
@@ -55,18 +57,17 @@ func calculateFinalPrice(originalPrice int64, discount int) int64 {
 	return originalPrice - (originalPrice * int64(discount) / 100)
 }
 
-func unique(items []Item) []Item {
-	seen := make(map[string]bool)
-	lst := make([]Item, 0, len(items))
-
+func unique(items []Item) ([]Item, error) {
+	seen := make(map[string]bool, len(items))
 	for _, item := range items {
-		if !seen[item.name] {
-			seen[item.name] = true
-			lst = append(lst, item)
+		if seen[item.name] {
+			return nil, ErrDuplicateItems
 		}
+
+		seen[item.name] = true
 	}
 
-	return lst
+	return items, nil
 }
 
 func New(
@@ -77,7 +78,7 @@ func New(
 	stock int32,
 	originalPrice int64,
 	discount int,
-	pickupWindow PickupWindow,
+	pickupWindow pickup.Window,
 	items []Item,
 	now time.Time,
 ) (*Bag, error) {
@@ -105,12 +106,21 @@ func New(
 		return nil, errors.New("discount must be between 30% and 90%")
 	}
 
-	if len(items) <= 0 {
+	if pickupWindow.IsZero() {
+		return nil, errors.New("pickup window is required")
+	}
+
+	if len(items) == 0 {
 		return nil, errors.New("at least one item is required")
 	}
 
 	if now.IsZero() {
 		return nil, errors.New("now is not set")
+	}
+
+	uniqueItems, err := unique(items)
+	if err != nil {
+		return nil, err
 	}
 
 	return &Bag{
@@ -123,7 +133,7 @@ func New(
 		finalPrice:    calculateFinalPrice(originalPrice, discount),
 		status:        Active,
 		pickupWindow:  pickupWindow,
-		items:         unique(items),
+		items:         uniqueItems,
 		createdAt:     now,
 		updatedAt:     now,
 	}, nil
@@ -138,7 +148,7 @@ func From(
 	originalPrice int64,
 	finalPrice int64,
 	status Status,
-	pickupWindow PickupWindow,
+	pickupWindow pickup.Window,
 	items []Item,
 	createdAt time.Time,
 	updatedAt time.Time,
@@ -164,7 +174,7 @@ func (b Bag) HasStock() bool {
 }
 
 func (b Bag) IsExpired(now time.Time) bool {
-	return now.After(b.pickupWindow.end)
+	return now.After(b.pickupWindow.End())
 }
 
 func (b Bag) IsClosed() bool {
@@ -177,7 +187,7 @@ func (b *Bag) Close(now time.Time) error {
 	}
 
 	if b.IsClosed() {
-		return ErrInvalidOperation
+		return ErrClosed
 	}
 
 	b.status = Closed
@@ -202,30 +212,11 @@ func (b *Bag) ChangeTitle(title string, now time.Time) error {
 }
 
 func (b *Bag) ChangeDescription(description string, now time.Time) error {
-	if description == "" {
-		return nil
-	}
-
 	if now.IsZero() {
 		return errors.New("now is not set")
 	}
 
 	b.description = description
-	b.updatedAt = now
-
-	return nil
-}
-
-func (b *Bag) ChangeStock(stock int32, now time.Time) error {
-	if stock <= 0 {
-		return errors.New("stock must be greater than 0")
-	}
-
-	if now.IsZero() {
-		return errors.New("now is not set")
-	}
-
-	b.stock = stock
 	b.updatedAt = now
 
 	return nil
@@ -251,7 +242,11 @@ func (b *Bag) ChangePrice(originalPrice int64, discount int, now time.Time) erro
 	return nil
 }
 
-func (b *Bag) ChangePickupWindow(pickupWindow PickupWindow, now time.Time) error {
+func (b *Bag) ChangePickupWindow(pickupWindow pickup.Window, now time.Time) error {
+	if pickupWindow.IsZero() {
+		return errors.New("pickup window is required")
+	}
+
 	if now.IsZero() {
 		return errors.New("now is not set")
 	}
@@ -263,7 +258,7 @@ func (b *Bag) ChangePickupWindow(pickupWindow PickupWindow, now time.Time) error
 }
 
 func (b *Bag) ReplaceItems(items []Item, now time.Time) error {
-	if len(items) <= 0 {
+	if len(items) == 0 {
 		return errors.New("at least one item is required")
 	}
 
@@ -271,7 +266,12 @@ func (b *Bag) ReplaceItems(items []Item, now time.Time) error {
 		return errors.New("now is not set")
 	}
 
-	b.items = unique(items)
+	uniqueItems, err := unique(items)
+	if err != nil {
+		return err
+	}
+
+	b.items = uniqueItems
 	b.updatedAt = now
 
 	return nil
@@ -309,7 +309,7 @@ func (b Bag) Status() Status {
 	return b.status
 }
 
-func (b Bag) PickupWindow() PickupWindow {
+func (b Bag) PickupWindow() pickup.Window {
 	return b.pickupWindow
 }
 
