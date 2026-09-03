@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Jeff1507/go-to-save-api/internal/common/pickup"
+	"github.com/Jeff1507/go-to-save-api/internal/core/pickup"
 )
 
 type Preset struct {

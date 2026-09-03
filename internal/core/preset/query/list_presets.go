@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Jeff1507/go-to-save-api/internal/common/pickup"
+	"github.com/Jeff1507/go-to-save-api/internal/core/pickup"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
