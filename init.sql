@@ -69,7 +69,7 @@ CREATE TABLE products (
 );
 
 -- Preset para cadastrar sacolas de forma mais rápida --
-CREATE TABLE pickup_templates (
+CREATE TABLE pickup_presets (
     id UUID PRIMARY KEY NOT NULL,
     store_id UUID NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
     name VARCHAR(50) NOT NULL,
