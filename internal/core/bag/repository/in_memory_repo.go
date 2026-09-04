@@ -28,6 +28,10 @@ func (repo *InMemRepo) Save(ctx context.Context, b *bag.Bag) error {
 }
 
 func (repo *InMemRepo) Update(ctx context.Context, b *bag.Bag) error {
+	if _, ok := repo.bags[b.ID()]; !ok {
+		return bag.ErrNotFound
+	}
+
 	repo.bags[b.ID()] = *b
 
 	return nil

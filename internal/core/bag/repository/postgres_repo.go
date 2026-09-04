@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 
@@ -24,7 +23,7 @@ func NewPostgresRepo(pg *pgxpool.Pool) *PostgresRepo {
 func (repo *PostgresRepo) Save(ctx context.Context, b *bag.Bag) error {
 	tx, err := repo.pg.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("begin transaction: %v", err)
+		return fmt.Errorf("begin transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -34,16 +33,36 @@ func (repo *PostgresRepo) Save(ctx context.Context, b *bag.Bag) error {
 		ctx,
 		`
 		INSERT INTO bags(
-			id, store_id, title, description, stock, original_price, final_price, status,
-			pickup_start, pickup_end, created_at, updated_at
+			id, 
+			store_id, 
+			title, 
+			description, 
+			stock, 
+			original_price, 
+			final_price, 
+			status,
+			pickup_start, 
+			pickup_end, 
+			created_at, 
+			updated_at
 		)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		`,
-		r.ID, r.StoreID, r.Title, r.Description, r.Stock, r.OriginalPrice, r.FinalPrice, r.Status,
-		r.PickupWindow.Start, r.PickupWindow.End, r.CreatedAt, r.UpdatedAt,
+		r.ID,
+		r.StoreID,
+		r.Title,
+		r.Description,
+		r.Stock,
+		r.OriginalPrice,
+		r.FinalPrice,
+		r.Status,
+		r.PickupWindow.Start,
+		r.PickupWindow.End,
+		r.CreatedAt,
+		r.UpdatedAt,
 	)
 	if err != nil {
-		return fmt.Errorf("insert bag: %v", err)
+		return fmt.Errorf("insert bag: %w", err)
 	}
 
 	batch := &pgx.Batch{}
@@ -62,16 +81,16 @@ func (repo *PostgresRepo) Save(ctx context.Context, b *bag.Bag) error {
 
 	for range r.Items {
 		if _, err := results.Exec(); err != nil {
-			return fmt.Errorf("insert bag item: %v", err)
+			return fmt.Errorf("insert bag item: %w", err)
 		}
 	}
 
 	if err := results.Close(); err != nil {
-		return fmt.Errorf("close batch: %v", err)
+		return fmt.Errorf("close batch: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("commit transaction: %v", err)
+		return fmt.Errorf("commit transaction: %w", err)
 	}
 
 	return nil
@@ -80,7 +99,7 @@ func (repo *PostgresRepo) Save(ctx context.Context, b *bag.Bag) error {
 func (repo *PostgresRepo) Update(ctx context.Context, b *bag.Bag) error {
 	tx, err := repo.pg.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("begin transaction: %v", err)
+		return fmt.Errorf("begin transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -91,15 +110,28 @@ func (repo *PostgresRepo) Update(ctx context.Context, b *bag.Bag) error {
 		`
 		UPDATE bags
 		SET 
-			title = $1, description = $2, stock = $3, original_price = $4, final_price = $5, 
-			status = $6, pickup_start = $7, pickup_end = $8, updated_at = $9
-		WHERE id = $10
+			title = $1, 
+			description = $2, 
+			original_price = $3, 
+			final_price = $4, 
+			status = $5, 
+			pickup_start = $6,
+			pickup_end = $7, 
+			updated_at = $8
+		WHERE id = $9
 		`,
-		r.Title, r.Description, r.Stock, r.OriginalPrice, r.FinalPrice, r.Status,
-		r.PickupWindow.Start, r.PickupWindow.End, r.UpdatedAt, r.ID,
+		r.Title,
+		r.Description,
+		r.OriginalPrice,
+		r.FinalPrice,
+		r.Status,
+		r.PickupWindow.Start,
+		r.PickupWindow.End,
+		r.UpdatedAt,
+		r.ID,
 	)
 	if err != nil {
-		return fmt.Errorf("update bag: %v", err)
+		return fmt.Errorf("update bag: %w", err)
 	}
 
 	_, err = tx.Exec(
@@ -110,7 +142,7 @@ func (repo *PostgresRepo) Update(ctx context.Context, b *bag.Bag) error {
 		r.ID,
 	)
 	if err != nil {
-		return fmt.Errorf("delete bag items: %v", err)
+		return fmt.Errorf("delete bag items: %w", err)
 	}
 
 	batch := &pgx.Batch{}
@@ -129,16 +161,16 @@ func (repo *PostgresRepo) Update(ctx context.Context, b *bag.Bag) error {
 
 	for range r.Items {
 		if _, err := results.Exec(); err != nil {
-			return fmt.Errorf("insert bag item: %v", err)
+			return fmt.Errorf("insert bag item: %w", err)
 		}
 	}
 
 	if err := results.Close(); err != nil {
-		return fmt.Errorf("close batch: %v", err)
+		return fmt.Errorf("close batch: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("commit transaction: %v", err)
+		return fmt.Errorf("commit transaction: %w", err)
 	}
 
 	return nil
@@ -149,8 +181,18 @@ func (repo *PostgresRepo) Find(ctx context.Context, id string) (*bag.Bag, error)
 		ctx,
 		`
 		SELECT
-			id, store_id, title, description, stock, original_price, final_price, status,
-			pickup_start, pickup_end, created_at, updated_at
+			id, 
+			store_id, 
+			title, 
+			description, 
+			stock, 
+			original_price, 
+			final_price, 
+			status,
+			pickup_start, 
+			pickup_end, 
+			created_at, 
+			updated_at
 		FROM bags
 		WHERE id = $1
 		`,
@@ -172,11 +214,11 @@ func (repo *PostgresRepo) Find(ctx context.Context, id string) (*bag.Bag, error)
 		&r.CreatedAt,
 		&r.UpdatedAt,
 	); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, bag.ErrNotFound
 		}
 
-		return nil, fmt.Errorf("scan bag: %v", err)
+		return nil, fmt.Errorf("scan bag: %w", err)
 	}
 
 	rows, err := repo.pg.Query(
@@ -189,7 +231,7 @@ func (repo *PostgresRepo) Find(ctx context.Context, id string) (*bag.Bag, error)
 		r.ID,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("select bag items: %v", err)
+		return nil, fmt.Errorf("select bag items: %w", err)
 	}
 	defer rows.Close()
 
@@ -201,14 +243,14 @@ func (repo *PostgresRepo) Find(ctx context.Context, id string) (*bag.Bag, error)
 			&i.ImageKey,
 			&i.Quantity,
 		); err != nil {
-			return nil, fmt.Errorf("scan bag item: %v", err)
+			return nil, fmt.Errorf("scan bag item: %w", err)
 		}
 
 		r.Items = append(r.Items, i)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate rows: %v", err)
+		return nil, fmt.Errorf("iterate rows: %w", err)
 	}
 
 	return toEntity(r), nil

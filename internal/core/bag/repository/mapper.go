@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Jeff1507/go-to-save-api/internal/core/bag"
+	"github.com/Jeff1507/go-to-save-api/internal/core/pickup"
 )
 
 type pickupWindowRow struct {
@@ -45,19 +46,19 @@ func toRow(b *bag.Bag) bagRow {
 		End:   b.PickupWindow().End(),
 	}
 
-	itemsRow := make([]itemRow, 0, len(b.Items()))
-	for _, item := range b.Items() {
-		var imgKey sql.NullString
+	itemsRow := make([]itemRow, len(b.Items()))
+	for i, item := range b.Items() {
+		var imageKey sql.NullString
 		if item.ImageKey() != "" {
-			imgKey = sql.NullString{String: item.ImageKey(), Valid: true}
+			imageKey = sql.NullString{String: item.ImageKey(), Valid: true}
 		}
 
-		itemsRow = append(itemsRow, itemRow{
+		itemsRow[i] = itemRow{
 			ID:       item.ID(),
 			Name:     item.Name(),
-			ImageKey: imgKey,
+			ImageKey: imageKey,
 			Quantity: item.Quantity(),
-		})
+		}
 	}
 
 	return bagRow{
@@ -77,23 +78,13 @@ func toRow(b *bag.Bag) bagRow {
 }
 
 func toEntity(r bagRow) *bag.Bag {
-	var description string
-	if r.Description.Valid {
-		description = r.Description.String
-	}
-
 	status, _ := bag.ParseStatus(r.Status)
 
-	pickupWindow, _ := bag.NewPickupWindow(r.PickupWindow.Start, r.PickupWindow.End)
+	pickupWindow, _ := pickup.NewWindow(r.PickupWindow.Start, r.PickupWindow.End)
 
 	bagItems := make([]bag.Item, 0, len(r.Items))
 	for _, item := range r.Items {
-		var imgKey string
-		if item.ImageKey.Valid {
-			imgKey = item.ImageKey.String
-		}
-
-		bagItem, _ := bag.NewItem(item.ID, item.Name, imgKey, item.Quantity)
+		bagItem, _ := bag.NewItem(item.ID, item.Name, item.ImageKey.String, item.Quantity)
 		bagItems = append(bagItems, bagItem)
 	}
 
@@ -101,7 +92,7 @@ func toEntity(r bagRow) *bag.Bag {
 		r.ID,
 		r.StoreID,
 		r.Title,
-		description,
+		r.Description.String,
 		r.Stock,
 		r.OriginalPrice,
 		r.FinalPrice,
