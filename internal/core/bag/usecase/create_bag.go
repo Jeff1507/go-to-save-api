@@ -2,25 +2,14 @@ package usecase
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"time"
 
 	"github.com/Jeff1507/go-to-save-api/internal/common/clock"
 	"github.com/Jeff1507/go-to-save-api/internal/core/bag"
+	"github.com/Jeff1507/go-to-save-api/internal/core/pickup"
 	"github.com/Jeff1507/go-to-save-api/internal/core/product"
 	"github.com/Jeff1507/go-to-save-api/internal/pkg/uuid"
 )
-
-type CreateBagPickupWindowInput struct {
-	Start time.Time
-	End   time.Time
-}
-
-type CreateBagItemInput struct {
-	ProductID string
-	Quantity  int32
-}
 
 type CreateBagInput struct {
 	StoreID       string
@@ -29,8 +18,9 @@ type CreateBagInput struct {
 	Stock         int32
 	OriginalPrice int64
 	Discount      int
-	PickupWindow  CreateBagPickupWindowInput
-	Items         []CreateBagItemInput
+	PickupStart   string
+	PickupEnd     string
+	Items         []ItemInput
 }
 
 type CreateBagOutput struct {
@@ -38,74 +28,45 @@ type CreateBagOutput struct {
 }
 
 type CreateBag struct {
-	clock       clock.Clock
 	bagRepo     bag.Repository
 	productRepo product.Repository
+	clock       clock.Clock
 }
 
 func NewCreateBag(
-	clock clock.Clock,
 	bagRepo bag.Repository,
 	productRepo product.Repository,
+	clock clock.Clock,
 ) *CreateBag {
 	return &CreateBag{
-		clock:       clock,
 		bagRepo:     bagRepo,
 		productRepo: productRepo,
+		clock:       clock,
 	}
 }
 
 func (uc *CreateBag) Execute(ctx context.Context, input CreateBagInput) (CreateBagOutput, error) {
 	now := uc.clock.Now()
 
-	pickupWindow, err := bag.NewPickupWindow(input.PickupWindow.Start, input.PickupWindow.End)
+	start, err := pickup.TimeFromString(input.PickupStart)
 	if err != nil {
-		if errors.Is(err, bag.ErrInvalidPickupWindowInterval) {
-			return CreateBagOutput{}, fmt.Errorf("new pickup window: %w", err)
-		}
-
-		return CreateBagOutput{}, fmt.Errorf("new pickup window: %v", err)
+		return CreateBagOutput{}, fmt.Errorf("parse start time: %w", err)
 	}
 
-	seen := make(map[string]bool)
-	productIDs := make([]string, 0, len(input.Items))
-	for _, item := range input.Items {
-		if !seen[item.ProductID] {
-			seen[item.ProductID] = true
-			productIDs = append(productIDs, item.ProductID)
-		}
-	}
-
-	products, err := uc.productRepo.List(ctx, productIDs)
+	end, err := pickup.TimeFromString(input.PickupEnd)
 	if err != nil {
-		return CreateBagOutput{}, fmt.Errorf("list products by id: %v", err)
+		return CreateBagOutput{}, fmt.Errorf("parse end time: %w", err)
 	}
 
-	if len(products) != len(productIDs) {
-		return CreateBagOutput{}, product.ErrNotFound
+	pickupWindow, err := pickup.ResolveWindow(start, end, now)
+	if err != nil {
+		return CreateBagOutput{}, fmt.Errorf("resolve pickup window: %w", err)
 	}
 
-	for _, prod := range products {
-		if prod.StoreID() != input.StoreID {
-			return CreateBagOutput{}, product.ErrNotFound
-		}
-	}
-
-	itemsMap := make(map[string]CreateBagItemInput, len(input.Items))
-	for _, item := range input.Items {
-		itemsMap[item.ProductID] = item
-	}
-
-	bagItems := make([]bag.Item, 0, len(products))
-	for _, prod := range products {
-		item := itemsMap[prod.ID()]
-
-		bagItem, err := bag.NewItem(uuid.Generate(), prod.Name(), prod.ImageKey(), item.Quantity)
-		if err != nil {
-			return CreateBagOutput{}, fmt.Errorf("new item: %v", err)
-		}
-
-		bagItems = append(bagItems, bagItem)
+	resolveBagItems := NewResolveBagItems(uc.productRepo)
+	bagItems, err := resolveBagItems.Execute(ctx, input.StoreID, input.Items)
+	if err != nil {
+		return CreateBagOutput{}, fmt.Errorf("resolve bag items: %w", err)
 	}
 
 	b, err := bag.New(
@@ -121,11 +82,11 @@ func (uc *CreateBag) Execute(ctx context.Context, input CreateBagInput) (CreateB
 		now,
 	)
 	if err != nil {
-		return CreateBagOutput{}, fmt.Errorf("new bag: %v", err)
+		return CreateBagOutput{}, fmt.Errorf("new bag: %w", err)
 	}
 
 	if err := uc.bagRepo.Save(ctx, b); err != nil {
-		return CreateBagOutput{}, fmt.Errorf("save bag: %v", err)
+		return CreateBagOutput{}, fmt.Errorf("save bag: %w", err)
 	}
 
 	return CreateBagOutput{

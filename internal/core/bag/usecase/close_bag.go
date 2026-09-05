@@ -2,47 +2,47 @@ package usecase
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/Jeff1507/go-to-save-api/internal/common/clock"
 	"github.com/Jeff1507/go-to-save-api/internal/core/bag"
 )
 
-type CloseBag struct {
-	clock   clock.Clock
-	bagRepo bag.Repository
+type CloseBagInput struct {
+	ID      string
+	StoreID string
 }
 
-func NewCloseBag(clock clock.Clock, bagRepo bag.Repository) *CloseBag {
+type CloseBag struct {
+	bagRepo bag.Repository
+	clock   clock.Clock
+}
+
+func NewCloseBag(bagRepo bag.Repository, clock clock.Clock) *CloseBag {
 	return &CloseBag{
-		clock:   clock,
 		bagRepo: bagRepo,
+		clock:   clock,
 	}
 }
 
-func (uc *CloseBag) Execute(ctx context.Context, id string) error {
+func (uc *CloseBag) Execute(ctx context.Context, input CloseBagInput) error {
 	now := uc.clock.Now()
 
-	b, err := uc.bagRepo.Find(ctx, id)
+	b, err := uc.bagRepo.Find(ctx, input.ID)
 	if err != nil {
-		if errors.Is(err, bag.ErrNotFound) {
-			return fmt.Errorf("find bag by id: %w", err)
-		}
+		return fmt.Errorf("find bag by id: %w", err)
+	}
 
-		return fmt.Errorf("find bag by id: %v", err)
+	if b.StoreID() != input.StoreID {
+		return bag.ErrNotFound
 	}
 
 	if err := b.Close(now); err != nil {
-		if errors.Is(err, bag.ErrInvalidOperation) {
-			return fmt.Errorf("close bag: %w", err)
-		}
-
-		return fmt.Errorf("close bag: %v", err)
+		return fmt.Errorf("close bag: %w", err)
 	}
 
 	if err := uc.bagRepo.Update(ctx, b); err != nil {
-		return fmt.Errorf("update bag: %v", err)
+		return fmt.Errorf("update bag: %w", err)
 	}
 
 	return nil
