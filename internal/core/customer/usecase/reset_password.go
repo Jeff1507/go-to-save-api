@@ -64,7 +64,7 @@ func (uc *ResetPassword) Execute(ctx context.Context, input ResetPasswordInput) 
 	}
 
 	if err := uc.sessions.RevokeAll(ctx, cust.ID()); err != nil {
-		fmt.Printf("warn: failed to revoke sessions: %v\n", err)
+		return fmt.Errorf("revoke all sessions: %w", err)
 	}
 
 	return nil
