@@ -56,8 +56,8 @@ func (repo *PostgresRepo) Save(ctx context.Context, b *bag.Bag) error {
 		r.OriginalPrice,
 		r.FinalPrice,
 		r.Status,
-		r.PickupWindow.Start,
-		r.PickupWindow.End,
+		r.PickupStart,
+		r.PickupEnd,
 		r.CreatedAt,
 		r.UpdatedAt,
 	)
@@ -125,8 +125,8 @@ func (repo *PostgresRepo) Update(ctx context.Context, b *bag.Bag) error {
 		r.OriginalPrice,
 		r.FinalPrice,
 		r.Status,
-		r.PickupWindow.Start,
-		r.PickupWindow.End,
+		r.PickupStart,
+		r.PickupEnd,
 		r.UpdatedAt,
 		r.ID,
 	)
@@ -209,8 +209,8 @@ func (repo *PostgresRepo) Find(ctx context.Context, id string) (*bag.Bag, error)
 		&r.OriginalPrice,
 		&r.FinalPrice,
 		&r.Status,
-		&r.PickupWindow.Start,
-		&r.PickupWindow.End,
+		&r.PickupStart,
+		&r.PickupEnd,
 		&r.CreatedAt,
 		&r.UpdatedAt,
 	); err != nil {

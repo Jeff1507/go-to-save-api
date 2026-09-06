@@ -8,11 +8,6 @@ import (
 	"github.com/Jeff1507/go-to-save-api/internal/core/pickup"
 )
 
-type pickupWindowRow struct {
-	Start time.Time
-	End   time.Time
-}
-
 type itemRow struct {
 	ID       string
 	Name     string
@@ -29,7 +24,8 @@ type bagRow struct {
 	OriginalPrice int64
 	FinalPrice    int64
 	Status        string
-	PickupWindow  pickupWindowRow
+	PickupStart   time.Time
+	PickupEnd     time.Time
 	Items         []itemRow
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
@@ -39,11 +35,6 @@ func toRow(b *bag.Bag) bagRow {
 	var description sql.NullString
 	if b.Description() != "" {
 		description = sql.NullString{String: b.Description(), Valid: true}
-	}
-
-	pickupWindowRow := pickupWindowRow{
-		Start: b.PickupWindow().Start(),
-		End:   b.PickupWindow().End(),
 	}
 
 	itemsRow := make([]itemRow, len(b.Items()))
@@ -70,7 +61,8 @@ func toRow(b *bag.Bag) bagRow {
 		OriginalPrice: b.OriginalPrice(),
 		FinalPrice:    b.FinalPrice(),
 		Status:        b.Status().String(),
-		PickupWindow:  pickupWindowRow,
+		PickupStart:   b.PickupWindow().Start(),
+		PickupEnd:     b.PickupWindow().End(),
 		Items:         itemsRow,
 		CreatedAt:     b.CreatedAt(),
 		UpdatedAt:     b.UpdatedAt(),
@@ -80,7 +72,7 @@ func toRow(b *bag.Bag) bagRow {
 func toEntity(r bagRow) *bag.Bag {
 	status, _ := bag.ParseStatus(r.Status)
 
-	pickupWindow, _ := pickup.NewWindow(r.PickupWindow.Start, r.PickupWindow.End)
+	pickupWindow, _ := pickup.NewWindow(r.PickupStart, r.PickupEnd)
 
 	bagItems := make([]bag.Item, 0, len(r.Items))
 	for _, item := range r.Items {
