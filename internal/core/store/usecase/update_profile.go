@@ -12,7 +12,6 @@ type UpdateProfileInput struct {
 	ID          string
 	Name        string
 	Description string
-	Address     AddressInput
 }
 
 type UpdateProfile struct {
@@ -41,25 +40,6 @@ func (uc *UpdateProfile) Execute(ctx context.Context, input UpdateProfileInput) 
 
 	if err := s.ChangeDescription(input.Description, now); err != nil {
 		return fmt.Errorf("change description: %w", err)
-	}
-
-	address, err := store.NewAddress(
-		input.Address.PostalCode,
-		input.Address.Street,
-		input.Address.Number,
-		input.Address.Neighborhood,
-		input.Address.Complement,
-		input.Address.City,
-		input.Address.State,
-		input.Address.Latitude,
-		input.Address.Longitude,
-	)
-	if err != nil {
-		return fmt.Errorf("new address: %w", err)
-	}
-
-	if err := s.ChangeAddress(address, now); err != nil {
-		return fmt.Errorf("change address: %w", err)
 	}
 
 	if err := uc.storeRepo.Update(ctx, s); err != nil {
