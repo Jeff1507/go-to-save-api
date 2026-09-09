@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/Jeff1507/go-to-save-api/internal/core/store/usecase"
-	"github.com/Jeff1507/go-to-save-api/internal/infra/api/cookie"
 	"github.com/gin-gonic/gin"
 )
 
@@ -39,8 +38,6 @@ func (h *ResetPasswordHandler) Handle(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-
-	cookie.ClearSessionCookie(c)
 
 	c.Status(http.StatusNoContent)
 }
