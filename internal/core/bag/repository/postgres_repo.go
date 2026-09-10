@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/Jeff1507/go-to-save-api/internal/core/bag"
+	"github.com/Jeff1507/go-to-save-api/internal/infra/transaction"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -254,4 +255,133 @@ func (repo *PostgresRepo) Find(ctx context.Context, id string) (*bag.Bag, error)
 	}
 
 	return toEntity(r), nil
+}
+
+func (repo *PostgresRepo) FindAndUpdate(
+	ctx context.Context,
+	id string,
+	fn func(b *bag.Bag) error,
+) error {
+	tx, ok := transaction.Querier(ctx)
+	if ok {
+		return repo.findAndUpdate(ctx, tx, id, fn)
+	}
+
+	tx, err := repo.pg.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	if err := repo.findAndUpdate(ctx, tx, id, fn); err != nil {
+		return fmt.Errorf("find and update with transaction: %w", err)
+	}
+
+	return tx.Commit(ctx)
+}
+
+// Por enquanto, só atualiza stock
+// Se quiser expandir para mais campos -> atualizar a query de update
+func (repo *PostgresRepo) findAndUpdate(
+	ctx context.Context,
+	tx pgx.Tx,
+	id string,
+	fn func(b *bag.Bag) error,
+) error {
+	row := tx.QueryRow(
+		ctx,
+		`
+		SELECT
+			id, 
+			store_id, 
+			title, 
+			description, 
+			stock, 
+			original_price, 
+			final_price, 
+			status,
+			pickup_start, 
+			pickup_end, 
+			created_at, 
+			updated_at
+		FROM bags
+		WHERE id = $1 FOR UPDATE
+		`,
+		id,
+	)
+
+	var r bagRow
+	if err := row.Scan(
+		&r.ID,
+		&r.StoreID,
+		&r.Title,
+		&r.Description,
+		&r.Stock,
+		&r.OriginalPrice,
+		&r.FinalPrice,
+		&r.Status,
+		&r.PickupStart,
+		&r.PickupEnd,
+		&r.CreatedAt,
+		&r.UpdatedAt,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return bag.ErrNotFound
+		}
+
+		return fmt.Errorf("scan bag: %w", err)
+	}
+
+	rows, err := tx.Query(
+		ctx,
+		`
+		SELECT id, name, image_key, quantity
+		FROM bag_items
+		WHERE bag_id = $1
+		`,
+		r.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("select bag items: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var i itemRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.ImageKey,
+			&i.Quantity,
+		); err != nil {
+			return fmt.Errorf("scan bag item: %w", err)
+		}
+
+		r.Items = append(r.Items, i)
+	}
+
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("iterate rows: %w", err)
+	}
+
+	b := toEntity(r)
+
+	if err := fn(b); err != nil {
+		return fmt.Errorf("execute callback function: %w", err)
+	}
+
+	_, err = tx.Exec(
+		ctx,
+		`
+		UPDATE bags
+		SET stock = $1, updated_at = $2
+		WHERE id = $3
+		`,
+		b.Stock(), b.UpdatedAt(), id,
+	)
+	if err != nil {
+		return fmt.Errorf("update bag: %w", err)
+	}
+
+	return nil
 }

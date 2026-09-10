@@ -74,10 +74,10 @@ func toEntity(r bagRow) *bag.Bag {
 
 	pickupWindow, _ := pickup.NewWindow(r.PickupStart, r.PickupEnd)
 
-	bagItems := make([]bag.Item, 0, len(r.Items))
-	for _, item := range r.Items {
+	bagItems := make([]bag.Item, len(r.Items))
+	for i, item := range r.Items {
 		bagItem, _ := bag.NewItem(item.ID, item.Name, item.ImageKey.String, item.Quantity)
-		bagItems = append(bagItems, bagItem)
+		bagItems[i] = bagItem
 	}
 
 	return bag.From(
