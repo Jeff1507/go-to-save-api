@@ -53,11 +53,17 @@ func domainError(err error) (int, string) {
 	case errors.Is(err, bag.ErrInsufficientStock):
 		return http.StatusUnprocessableEntity, "Estoque da sacola insuficiente"
 
-	case errors.Is(err, bag.ErrProductNotFound):
-		return http.StatusNotFound, "Produto não encontrado"
-
 	case errors.Is(err, bag.ErrDuplicateItems):
 		return http.StatusBadRequest, "Itens duplicados"
+
+	case errors.Is(err, bag.ErrItemNotFound):
+		return http.StatusNotFound, "Item não encontrado"
+
+	case errors.Is(err, bag.ErrHasPendingOrder):
+		return http.StatusNotFound, "A sacola não pode ser editada com um pedido pendente"
+
+	case errors.Is(err, bag.ErrZeroDelta):
+		return http.StatusBadRequest, "O ajuste de estoque não pode ser zero"
 
 	default:
 		return http.StatusInternalServerError, "Erro interno no servidor"
