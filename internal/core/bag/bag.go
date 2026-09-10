@@ -174,7 +174,7 @@ func (b Bag) HasStock() bool {
 }
 
 func (b Bag) IsExpired(now time.Time) bool {
-	return now.After(b.pickupWindow.End())
+	return b.PickupWindow().IsExpired(now)
 }
 
 func (b Bag) IsClosed() bool {
@@ -191,6 +191,75 @@ func (b *Bag) Close(now time.Time) error {
 	}
 
 	b.status = Closed
+	b.updatedAt = now
+
+	return nil
+}
+
+func (b *Bag) Reserve(quantity int32, now time.Time) error {
+	if b.IsExpired(now) {
+		return ErrExpired
+	}
+
+	if b.IsClosed() {
+		return ErrClosed
+	}
+
+	if quantity <= 0 {
+		return errors.New("quantity must be greater than 0")
+	}
+
+	if quantity > b.stock {
+		return ErrInsufficientStock
+	}
+
+	if now.IsZero() {
+		return errors.New("now is not set")
+	}
+
+	b.stock -= quantity
+	b.updatedAt = now
+
+	return nil
+}
+
+// Restock devolve quantidade ao estoque da sacola, tipicamente
+// após cancelamento ou no-show de um pedido. Não valida status/expiração
+// da sacola, pois a devolução deve ser possível mesmo após o fechamento.
+func (b *Bag) Restock(quantity int32, now time.Time) error {
+	if quantity <= 0 {
+		return errors.New("quantity must be greater than 0")
+	}
+
+	if now.IsZero() {
+		return errors.New("now is not set")
+	}
+
+	b.stock += quantity
+	b.updatedAt = now
+
+	return nil
+}
+
+// AdjustStock aplica um ajuste manual de estoque feito pela loja (ex: reposição,
+// correção de contagem, remoção por perda). Delta pode ser positivo ou negativo.
+// Diferente de Reserve (cliente) e Restock (sistema, após cancelamento), esta é
+// uma ação administrativa e só é permitida em sacolas ainda ativas.
+func (b *Bag) AdjustStock(delta int32, now time.Time) error {
+	if now.IsZero() {
+		return errors.New("now is not set")
+	}
+
+	if b.IsClosed() {
+		return ErrClosed
+	}
+
+	newStock := b.stock + delta
+	if newStock < 0 {
+		return ErrInsufficientStock
+	}
+
+	b.stock = newStock
 	b.updatedAt = now
 
 	return nil
