@@ -41,13 +41,13 @@ func (uc *ResolveBagItems) Execute(
 	}
 
 	if len(products) != len(productIDs) {
-		return nil, bag.ErrProductNotFound
+		return nil, bag.ErrItemNotFound
 	}
 
 	bagItems := make([]bag.Item, 0, len(products))
 	for _, prod := range products {
 		if prod.StoreID() != storeID {
-			return nil, bag.ErrProductNotFound
+			return nil, bag.ErrItemNotFound
 		}
 
 		item := itemsMap[prod.ID()]

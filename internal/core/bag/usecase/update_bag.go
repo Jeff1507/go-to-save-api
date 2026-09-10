@@ -6,6 +6,7 @@ import (
 
 	"github.com/Jeff1507/go-to-save-api/internal/common/clock"
 	"github.com/Jeff1507/go-to-save-api/internal/core/bag"
+	"github.com/Jeff1507/go-to-save-api/internal/core/order"
 	"github.com/Jeff1507/go-to-save-api/internal/core/pickup"
 	"github.com/Jeff1507/go-to-save-api/internal/core/product"
 )
@@ -25,22 +26,24 @@ type UpdateBagInput struct {
 type UpdateBag struct {
 	bagRepo     bag.Repository
 	productRepo product.Repository
+	orderRepo   order.Repository
 	clock       clock.Clock
 }
 
 func NewUpdateBag(
 	bagRepo bag.Repository,
 	productRepo product.Repository,
+	orderRepo order.Repository,
 	clock clock.Clock,
 ) *UpdateBag {
 	return &UpdateBag{
 		bagRepo:     bagRepo,
 		productRepo: productRepo,
+		orderRepo:   orderRepo,
 		clock:       clock,
 	}
 }
 
-// TODO: Checar o IsExpired
 func (uc *UpdateBag) Execute(ctx context.Context, input UpdateBagInput) error {
 	now := uc.clock.Now()
 
@@ -61,8 +64,15 @@ func (uc *UpdateBag) Execute(ctx context.Context, input UpdateBagInput) error {
 		return bag.ErrExpired
 	}
 
-	// TODO: Verificar se a bag não pertence a nenhum pedido.
-	// Se pertencer a um pedido, a edição é bloqueada.
+	// Verifica se a bag pertence a um pedido, se pertencer a edição é bloqueada.
+	hasPendingOrder, err := uc.orderRepo.Has(ctx, b.ID())
+	if err != nil {
+		return fmt.Errorf("check pending order: %w", err)
+	}
+
+	if hasPendingOrder {
+		return bag.ErrHasPendingOrder
+	}
 
 	if err := b.ChangeTitle(input.Title, now); err != nil {
 		return fmt.Errorf("change title: %w", err)
