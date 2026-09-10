@@ -36,8 +36,24 @@ func NewWindow(start, end time.Time) (Window, error) {
 	}, nil
 }
 
+func (w Window) Extended(duration time.Duration) (Window, error) {
+	return NewWindow(w.start, w.end.Add(duration))
+}
+
 func (w Window) IsZero() bool {
 	return w.start.IsZero() && w.end.IsZero()
+}
+
+func (w Window) IsExpired(now time.Time) bool {
+	return now.After(w.end)
+}
+
+func (w Window) Equal(other Window) bool {
+	return w.start.Equal(other.start) && w.end.Equal(other.end)
+}
+
+func (w Window) IsNearExpiry(now time.Time, threshold time.Duration) bool {
+	return w.end.Sub(now) <= threshold
 }
 
 func (w Window) Start() time.Time {
