@@ -20,10 +20,11 @@ type ProfileOutput struct {
 	CNPJ        string
 	AvatarURL   *string
 	Description *string
-	Address     AddressOutput
 	VerifiedAt  *time.Time
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	Rating      RatingOutput
+	Address     AddressOutput
 }
 
 type GetProfile struct {
@@ -52,6 +53,8 @@ func (qry *GetProfile) Execute(ctx context.Context, id string) (ProfileOutput, e
 			s.description,
 			s.created_at,
 			s.updated_at,
+			sr.sum,
+			sr.count,
 			a.postal_code,
 			a.street,
 			a.number,
@@ -63,6 +66,7 @@ func (qry *GetProfile) Execute(ctx context.Context, id string) (ProfileOutput, e
 			a.longitude
 		FROM users u
 		INNER JOIN stores s ON s.id = u.id
+		INNER JOIN stores_rating sr ON sr.store_id = s.id
 		INNER JOIN addresses a ON a.store_id = s.id
 		WHERE u.id = $1
 		`,
@@ -74,6 +78,7 @@ func (qry *GetProfile) Execute(ctx context.Context, id string) (ProfileOutput, e
 		avatarKey         sql.NullString
 		description       sql.NullString
 		verifiedAt        sql.NullTime
+		ratingSum         int32
 		addressComplement sql.NullString
 	)
 	if err := row.Scan(
@@ -86,6 +91,8 @@ func (qry *GetProfile) Execute(ctx context.Context, id string) (ProfileOutput, e
 		&description,
 		&profile.CreatedAt,
 		&profile.UpdatedAt,
+		&ratingSum,
+		&profile.Rating.Count,
 		&profile.Address.PostalCode,
 		&profile.Address.Street,
 		&profile.Address.Number,
@@ -115,6 +122,8 @@ func (qry *GetProfile) Execute(ctx context.Context, id string) (ProfileOutput, e
 	if verifiedAt.Valid {
 		profile.VerifiedAt = &verifiedAt.Time
 	}
+
+	profile.Rating.Average = calculateAverageRating(ratingSum, profile.Rating.Count)
 
 	if addressComplement.Valid {
 		profile.Address.Complement = &addressComplement.String

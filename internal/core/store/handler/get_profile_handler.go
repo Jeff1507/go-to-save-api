@@ -19,6 +19,7 @@ type ProfileResponse struct {
 	VerifiedAt  *time.Time      `json:"verifiedAt"`
 	CreatedAt   time.Time       `json:"createdAt"`
 	UpdatedAt   time.Time       `json:"updatedAt"`
+	Rating      RatingResponse  `json:"rating"`
 	Address     AddressResponse `json:"address"`
 }
 
@@ -56,6 +57,7 @@ func (h *GetProfileHandler) Handle(c *gin.Context) {
 			VerifiedAt:  profile.VerifiedAt,
 			CreatedAt:   profile.CreatedAt,
 			UpdatedAt:   profile.UpdatedAt,
+			Rating:      RatingResponse(profile.Rating),
 			Address:     AddressResponse(profile.Address),
 		},
 	})
