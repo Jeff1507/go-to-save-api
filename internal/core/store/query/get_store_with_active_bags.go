@@ -63,7 +63,7 @@ func (qry *GetStoreWithActiveBags) Execute(ctx context.Context, id string) (Stor
 		ctx,
 		`
 		SELECT
-			u.id,
+			s.id,
 			s.name,
 			s.cnpj,
 			s.avatar_key,
@@ -80,11 +80,10 @@ func (qry *GetStoreWithActiveBags) Execute(ctx context.Context, id string) (Stor
 			a.state,
 			a.latitude,
 			a.longitude
-		FROM users u
-		INNER JOIN stores s ON s.id = u.id
+		FROM stores s
 		INNER JOIN stores_rating sr ON sr.store_id = s.id
 		INNER JOIN addresses a ON a.store_id = s.id
-		WHERE u.id = $1
+		WHERE s.id = $1
 		`,
 		id,
 	)
@@ -131,11 +130,11 @@ func (qry *GetStoreWithActiveBags) Execute(ctx context.Context, id string) (Stor
 		s.Description = &description.String
 	}
 
-	s.Rating.Average = calculateAverageRating(ratingSum, s.Rating.Count)
-
 	if addressComplement.Valid {
 		s.Address.Complement = &addressComplement.String
 	}
+
+	s.Rating.Average = calculateAverageRating(ratingSum, s.Rating.Count)
 
 	rows, err := qry.pg.Query(
 		ctx,

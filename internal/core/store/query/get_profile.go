@@ -123,11 +123,11 @@ func (qry *GetProfile) Execute(ctx context.Context, id string) (ProfileOutput, e
 		profile.VerifiedAt = &verifiedAt.Time
 	}
 
-	profile.Rating.Average = calculateAverageRating(ratingSum, profile.Rating.Count)
-
 	if addressComplement.Valid {
 		profile.Address.Complement = &addressComplement.String
 	}
+
+	profile.Rating.Average = calculateAverageRating(ratingSum, profile.Rating.Count)
 
 	return profile, nil
 }
