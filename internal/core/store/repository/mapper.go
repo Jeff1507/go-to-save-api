@@ -27,6 +27,8 @@ type storeRow struct {
 	AvatarKey    sql.NullString
 	Description  sql.NullString
 	PasswordHash string
+	RatingSum    int32
+	RatingCount  int32
 	Address      addressRow
 	VerifiedAt   sql.NullTime
 	CreatedAt    time.Time
@@ -74,6 +76,8 @@ func toRow(s *store.Store) storeRow {
 		AvatarKey:    avatarKey,
 		Description:  description,
 		PasswordHash: s.PasswordHash(),
+		RatingSum:    s.Rating().Sum(),
+		RatingCount:  s.Rating().Count(),
 		Address:      address,
 		VerifiedAt:   verifiedAt,
 		CreatedAt:    s.CreatedAt(),
@@ -82,6 +86,8 @@ func toRow(s *store.Store) storeRow {
 }
 
 func toEntity(r storeRow) *store.Store {
+	rating := store.NewRating(r.RatingSum, r.RatingCount)
+
 	address, _ := store.NewAddress(
 		r.Address.PostalCode,
 		r.Address.Street,
@@ -102,6 +108,7 @@ func toEntity(r storeRow) *store.Store {
 		r.AvatarKey.String,
 		r.Description.String,
 		r.PasswordHash,
+		rating,
 		address,
 		r.VerifiedAt.Time,
 		r.CreatedAt,

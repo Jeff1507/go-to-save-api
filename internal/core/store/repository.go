@@ -8,4 +8,5 @@ type Repository interface {
 	Exists(ctx context.Context, email string) (bool, error)
 	Find(ctx context.Context, id string) (*Store, error)
 	FindByEmail(ctx context.Context, email string) (*Store, error)
+	FindAndUpdate(ctx context.Context, id string, fn func(s *Store) error) error
 }
