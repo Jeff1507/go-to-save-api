@@ -38,7 +38,7 @@ func translateTag(fErr validator.FieldError) string {
 		return "deve ser um e-mail válido"
 
 	case "time":
-		return "deve estar no formato HH:MM"
+		return "deve ser um horário válido"
 
 	case "latitude":
 		return "deve estar entre -90 e 90"
