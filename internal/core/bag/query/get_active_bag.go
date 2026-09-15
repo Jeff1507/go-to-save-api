@@ -15,7 +15,6 @@ import (
 
 type ActiveBagOutput struct {
 	ID            string
-	StoreID       string
 	Title         string
 	Description   *string
 	Stock         int32
@@ -45,7 +44,6 @@ func (qry *GetActiveBag) Execute(ctx context.Context, id string) (ActiveBagOutpu
 		`
 		SELECT
 			id, 
-			store_id,
 			title, 
 			description, 
 			stock, 
@@ -54,7 +52,7 @@ func (qry *GetActiveBag) Execute(ctx context.Context, id string) (ActiveBagOutpu
 			pickup_start, 
 			pickup_end
 		FROM bags
-		WHERE id = $1 AND status = 'ACTIVE'
+		WHERE id = $1 AND status = 'ACTIVE' AND stock > 0
 		`,
 		id,
 	)
@@ -65,7 +63,6 @@ func (qry *GetActiveBag) Execute(ctx context.Context, id string) (ActiveBagOutpu
 	)
 	if err := row.Scan(
 		&active.ID,
-		&active.StoreID,
 		&active.Title,
 		&description,
 		&active.Stock,

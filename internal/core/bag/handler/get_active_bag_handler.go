@@ -13,7 +13,6 @@ type GetActiveBagParams struct {
 
 type ActiveBagResponse struct {
 	ID            string               `json:"id"`
-	StoreID       string               `json:"storeId"`
 	Title         string               `json:"title"`
 	Description   *string              `json:"description"`
 	Stock         int32                `json:"stock"`
@@ -60,7 +59,6 @@ func (h *GetActiveBagHandler) Handle(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": ActiveBagResponse{
 			ID:            active.ID,
-			StoreID:       active.StoreID,
 			Title:         active.Title,
 			Description:   active.Description,
 			Stock:         active.Stock,
