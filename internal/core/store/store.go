@@ -2,6 +2,7 @@ package store
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -14,6 +15,7 @@ type Store struct {
 	description  string // Opcional
 	passwordHash string
 	address      Address
+	rating       Rating
 	verifiedAt   time.Time
 	createdAt    time.Time
 	updatedAt    time.Time
@@ -76,6 +78,7 @@ func From(
 	avatarKey string,
 	description string,
 	passwordHash string,
+	rating Rating,
 	address Address,
 	verifiedAt time.Time,
 	createdAt time.Time,
@@ -89,6 +92,7 @@ func From(
 		avatarKey:    avatarKey,
 		description:  description,
 		passwordHash: passwordHash,
+		rating:       rating,
 		address:      address,
 		verifiedAt:   verifiedAt,
 		createdAt:    createdAt,
@@ -107,6 +111,14 @@ func (s *Store) Verify(now time.Time) error {
 
 	s.verifiedAt = now
 	s.updatedAt = now
+
+	return nil
+}
+
+func (s *Store) AddRating(rating int16) error {
+	if err := s.rating.Add(rating); err != nil {
+		return fmt.Errorf("add rating: %w", err)
+	}
 
 	return nil
 }
@@ -224,6 +236,10 @@ func (s Store) Description() string {
 
 func (s Store) PasswordHash() string {
 	return s.passwordHash
+}
+
+func (s Store) Rating() Rating {
+	return s.rating
 }
 
 func (s Store) Address() Address {
