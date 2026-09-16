@@ -28,7 +28,6 @@ go.work.sum
 .env
 
 # Air
-.air.*
 tmp/
 
 # File uploads directory
