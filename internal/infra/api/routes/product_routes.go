@@ -31,16 +31,12 @@ func NewProductRoutes(
 }
 
 func (r *ProductRoutes) Register(router *gin.Engine) {
-	products := router.Group("/products")
-	products.Use(handler.ErrorHandler)
-	products.Use(middleware.MaxRequestBodySize(5 << 20))
-
-	{
-		products.Use(r.auth.AuthenticateStore)
-
-		products.POST("", r.create.Handle)
-		products.GET("", r.list.Handle)
-		products.PUT("/:id", r.update.Handle)
-		products.DELETE("/:id", r.delete.Handle)
-	}
+	store := router.Group("/store/products")
+	store.Use(handler.ErrorHandler)
+	store.Use(middleware.MaxRequestBodySize(5 << 20))
+	store.Use(r.auth.AuthenticateStore)
+	store.POST("", r.create.Handle)
+	store.GET("", r.list.Handle)
+	store.PUT("/:id", r.update.Handle)
+	store.DELETE("/:id", r.delete.Handle)
 }

@@ -31,15 +31,11 @@ func NewPresetRoutes(
 }
 
 func (r *PresetRoutes) Register(router *gin.Engine) {
-	presets := router.Group("/pickup-presets")
-	presets.Use(handler.ErrorHandler)
-
-	{
-		presets.Use(r.auth.AuthenticateStore)
-
-		presets.POST("", r.create.Handle)
-		presets.GET("", r.list.Handle)
-		presets.PUT("/:id", r.update.Handle)
-		presets.DELETE("/:id", r.delete.Handle)
-	}
+	store := router.Group("/store/pickup-presets")
+	store.Use(handler.ErrorHandler)
+	store.Use(r.auth.AuthenticateStore)
+	store.POST("", r.create.Handle)
+	store.GET("", r.list.Handle)
+	store.PUT("/:id", r.update.Handle)
+	store.DELETE("/:id", r.delete.Handle)
 }

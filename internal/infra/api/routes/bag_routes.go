@@ -7,13 +7,14 @@ import (
 )
 
 type BagRoutes struct {
-	auth      *middleware.Authentication
-	list      *handler.ListBagsHandler
-	get       *handler.GetBagHandler
-	create    *handler.CreateBagHandler
-	update    *handler.UpdateBagHandler
-	close     *handler.CloseBagHandler
-	getActive *handler.GetActiveBagHandler
+	auth        *middleware.Authentication
+	list        *handler.ListBagsHandler
+	get         *handler.GetBagHandler
+	create      *handler.CreateBagHandler
+	update      *handler.UpdateBagHandler
+	updateStock *handler.UpdateStockHandler
+	close       *handler.CloseBagHandler
+	getActive   *handler.GetActiveBagHandler
 }
 
 func NewBagRoutes(
@@ -22,41 +23,35 @@ func NewBagRoutes(
 	get *handler.GetBagHandler,
 	create *handler.CreateBagHandler,
 	update *handler.UpdateBagHandler,
+	updateStock *handler.UpdateStockHandler,
 	close *handler.CloseBagHandler,
 	getActive *handler.GetActiveBagHandler,
 ) *BagRoutes {
 	return &BagRoutes{
-		auth:      auth,
-		list:      list,
-		get:       get,
-		create:    create,
-		update:    update,
-		close:     close,
-		getActive: getActive,
+		auth:        auth,
+		list:        list,
+		get:         get,
+		create:      create,
+		update:      update,
+		updateStock: updateStock,
+		close:       close,
+		getActive:   getActive,
 	}
 }
 
 func (r *BagRoutes) Register(router *gin.Engine) {
 	bags := router.Group("/bags")
 	bags.Use(handler.ErrorHandler)
+	bags.Use(r.auth.AuthenticateCustomer)
+	bags.GET("/:id", r.getActive.Handle)
 
-	{
-		// Rotas para o app mobile
-		reservation := bags.Group("/reservation")
-		reservation.Use(r.auth.AuthenticateCustomer)
-
-		reservation.GET("/:id", r.getActive.Handle)
-	}
-
-	{
-		// Rotas para o dashboard web
-		store := bags.Group("")
-		store.Use(r.auth.AuthenticateStore)
-
-		store.POST("", r.create.Handle)
-		store.GET("", r.list.Handle)
-		store.GET("/:id", r.get.Handle)
-		store.PUT("/:id", r.update.Handle)
-		store.PATCH("/:id/close", r.close.Handle)
-	}
+	store := router.Group("/store/bags")
+	store.Use(handler.ErrorHandler)
+	store.Use(r.auth.AuthenticateStore)
+	store.POST("", r.create.Handle)
+	store.GET("", r.list.Handle)
+	store.GET("/:id", r.get.Handle)
+	store.PUT("/:id", r.update.Handle)
+	store.PATCH("/:id/stock", r.updateStock.Handle)
+	store.PATCH("/:id/close", r.close.Handle)
 }

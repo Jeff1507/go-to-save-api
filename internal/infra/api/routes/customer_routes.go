@@ -65,27 +65,24 @@ func (r *CustomerRoutes) Register(router *gin.Engine) {
 	customers.Use(handler.ErrorHandler)
 	customers.Use(middleware.MaxRequestBodySize(5 << 20))
 
-	{
-		// Rotas públicas
-		customers.POST("/signup", r.signup.Handle)
-		customers.POST("/login", r.login.Handle)
-		customers.POST("/email-verification", r.emailVerification.Handle)
-		customers.PATCH("/verify-email", r.verifyEmail.Handle)
-		customers.POST("/password-reset", r.passwordReset.Handle)
-		customers.PATCH("/reset-password", r.resetPassword.Handle)
-	}
+	// Rotas públicas
+	public := customers.Group("")
+	public.POST("/signup", r.signup.Handle)
+	public.POST("/login", r.login.Handle)
+	public.POST("/email-verification", r.emailVerification.Handle)
+	public.PATCH("/verify-email", r.verifyEmail.Handle)
+	public.POST("/password-reset", r.passwordReset.Handle)
+	public.PATCH("/reset-password", r.resetPassword.Handle)
 
-	{
-		// Rotas privadas
-		customers.Use(r.auth.AuthenticateCustomer)
-
-		customers.GET("/me", r.getMe.Handle)
-		customers.PATCH("/me", r.updateMe.Handle)
-		customers.PUT("/me/avatar", r.updateAvatar.Handle)
-		customers.DELETE("/me/avatar", r.removeAvatar.Handle)
-		customers.PATCH("/me/email", r.updateEmail.Handle)
-		customers.PATCH("/me/password", r.updatePassword.Handle)
-		customers.POST("/logout", r.logout.Handle)
-		customers.POST("/logout-all", r.logoutAll.Handle)
-	}
+	// Rotas privadas
+	private := customers.Group("")
+	private.Use(r.auth.AuthenticateCustomer)
+	private.GET("/me", r.getMe.Handle)
+	private.PATCH("/me", r.updateMe.Handle)
+	private.PUT("/me/avatar", r.updateAvatar.Handle)
+	private.DELETE("/me/avatar", r.removeAvatar.Handle)
+	private.PATCH("/me/email", r.updateEmail.Handle)
+	private.PATCH("/me/password", r.updatePassword.Handle)
+	private.POST("/logout", r.logout.Handle)
+	private.POST("/logout-all", r.logoutAll.Handle)
 }

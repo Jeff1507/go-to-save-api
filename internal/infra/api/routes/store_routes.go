@@ -22,6 +22,9 @@ type StoreRoutes struct {
 	removeAvatar      *handler.RemoveAvatarHandler
 	updateEmail       *handler.UpdateEmailHandler
 	updatePassword    *handler.UpdatePasswordHandler
+	updateAddress     *handler.UpdateAddressHandler
+	listNearby        *handler.ListNearbyStoresHandler
+	getWithActiveBags *handler.GetStoreWithActiveBagsHandler
 }
 
 func NewStoreRoutes(
@@ -40,6 +43,9 @@ func NewStoreRoutes(
 	removeAvatar *handler.RemoveAvatarHandler,
 	updateEmail *handler.UpdateEmailHandler,
 	updatePassword *handler.UpdatePasswordHandler,
+	updateAddress *handler.UpdateAddressHandler,
+	listNearby *handler.ListNearbyStoresHandler,
+	getWithActiveBags *handler.GetStoreWithActiveBagsHandler,
 ) *StoreRoutes {
 	return &StoreRoutes{
 		auth:              auth,
@@ -57,6 +63,9 @@ func NewStoreRoutes(
 		removeAvatar:      removeAvatar,
 		updateEmail:       updateEmail,
 		updatePassword:    updatePassword,
+		updateAddress:     updateAddress,
+		listNearby:        listNearby,
+		getWithActiveBags: getWithActiveBags,
 	}
 }
 
@@ -65,27 +74,31 @@ func (r *StoreRoutes) Register(router *gin.Engine) {
 	stores.Use(handler.ErrorHandler)
 	stores.Use(middleware.MaxRequestBodySize(5 << 20))
 
-	{
-		// Rotas públicas
-		stores.POST("/signup", r.signup.Handle)
-		stores.POST("/login", r.login.Handle)
-		stores.POST("/email-verification", r.emailVerification.Handle)
-		stores.PATCH("/verify-email", r.verifyEmail.Handle)
-		stores.POST("/password-reset", r.passwordReset.Handle)
-		stores.PATCH("/reset-password", r.resetPassword.Handle)
-	}
+	// Rotas públicas
+	public := stores.Group("")
+	public.POST("/signup", r.signup.Handle)
+	public.POST("/login", r.login.Handle)
+	public.POST("/email-verification", r.emailVerification.Handle)
+	public.PATCH("/verify-email", r.verifyEmail.Handle)
+	public.POST("/password-reset", r.passwordReset.Handle)
+	public.PATCH("/reset-password", r.resetPassword.Handle)
 
-	{
-		// Rotas privadas
-		stores.Use(r.auth.AuthenticateStore)
+	// Rotas privadas
+	private := stores.Group("")
+	private.Use(r.auth.AuthenticateStore)
+	private.GET("/me", r.getMe.Handle)
+	private.PATCH("/me", r.updateMe.Handle)
+	private.PUT("/me/avatar", r.updateAvatar.Handle)
+	private.DELETE("/me/avatar", r.removeAvatar.Handle)
+	private.PATCH("/me/email", r.updateEmail.Handle)
+	private.PATCH("/me/password", r.updatePassword.Handle)
+	private.PATCH("/me/address", r.updateAddress.Handle)
+	private.POST("/logout", r.logout.Handle)
+	private.POST("/logout-all", r.logoutAll.Handle)
 
-		stores.GET("/me", r.getMe.Handle)
-		stores.PATCH("/me", r.updateMe.Handle)
-		stores.PUT("/me/avatar", r.updateAvatar.Handle)
-		stores.DELETE("/me/avatar", r.removeAvatar.Handle)
-		stores.PATCH("/me/email", r.updateEmail.Handle)
-		stores.PATCH("/me/password", r.updatePassword.Handle)
-		stores.POST("/logout", r.logout.Handle)
-		stores.POST("/logout-all", r.logoutAll.Handle)
-	}
+	// Rotas do app mobile
+	reservation := stores.Group("")
+	reservation.Use(r.auth.AuthenticateCustomer)
+	reservation.GET("", r.listNearby.Handle)
+	reservation.GET("/:id", r.getWithActiveBags.Handle)
 }
