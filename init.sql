@@ -1,11 +1,11 @@
 -- TODO: Criar indexes para consultas mais rápidas --
--- TODO: Adicionar query para anomanizar users, stores e customers por causa da LGPD --
+-- TODO: Adicionar query para anonimizar users, stores e customers por causa da LGPD --
 
 CREATE EXTENSION IF NOT EXISTS postgis;
 
 CREATE TYPE bag_status AS ENUM ('ACTIVE', 'CLOSED');
 
-CREATE TYPE order_status AS ENUM ('PENDING', 'CONFIRMED', 'CANCELLED', 'NO_SHOW');
+CREATE TYPE order_status AS ENUM ('PENDING', 'COMPLETED', 'CANCELLED', 'NO_SHOW');
 
 CREATE TABLE users (
     id UUID PRIMARY KEY NOT NULL,
@@ -136,25 +136,13 @@ CREATE TABLE reviews (
     id UUID PRIMARY KEY NOT NULL,
     order_id UUID UNIQUE NOT NULL REFERENCES orders(id) ON DELETE RESTRICT,
     rating SMALLINT NOT NULL,
+    comment TEXT,
 
     reviewed_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- Será povoada por seeds --
-CREATE TABLE tags (
-    id SERIAL PRIMARY KEY NOT NULL,
-    name VARCHAR(100) UNIQUE NOT NULL
-);
-
-CREATE TABLE review_tags (
-    review_id UUID NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
-    tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-
-    PRIMARY KEY(review_id, tag_id)
-);
-
 CREATE TABLE stores_rating (
     store_id UUID PRIMARY KEY NOT NULL REFERENCES stores(id) ON DELETE RESTRICT,
-    rating_sum INTEGER NOT NULL,
-    rating_count INTEGER NOT NULL
+    sum INTEGER NOT NULL,
+    count INTEGER NOT NULL
 );
