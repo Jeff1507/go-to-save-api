@@ -181,7 +181,6 @@ func (qry *ListNearbyStores) Execute(
 	return stores, nil
 }
 
-// Arredonda para duas cadas decimais. Ex: 2.35 km
 func formatDistanceKM(meters float64) float64 {
-	return math.Round(meters/1000*100) / 100
+	return math.Round(meters/1000*10) / 10
 }
