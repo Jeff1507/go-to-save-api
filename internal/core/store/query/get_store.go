@@ -38,25 +38,21 @@ type StoreOutput struct {
 	Bags        []BagSummaryOutput
 }
 
-type GetStoreWithActiveBags struct {
+type GetStore struct {
 	pg      *pgxpool.Pool
 	storage storage.Storage
 	clock   clock.Clock
 }
 
-func NewGetStoreWithActiveBags(
-	pg *pgxpool.Pool,
-	storage storage.Storage,
-	clock clock.Clock,
-) *GetStoreWithActiveBags {
-	return &GetStoreWithActiveBags{
+func NewGetStore(pg *pgxpool.Pool, storage storage.Storage, clock clock.Clock) *GetStore {
+	return &GetStore{
 		pg:      pg,
 		storage: storage,
 		clock:   clock,
 	}
 }
 
-func (qry *GetStoreWithActiveBags) Execute(ctx context.Context, id string) (StoreOutput, error) {
+func (qry *GetStore) Execute(ctx context.Context, id string) (StoreOutput, error) {
 	now := qry.clock.Now()
 
 	row := qry.pg.QueryRow(

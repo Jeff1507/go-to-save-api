@@ -7,11 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type GetActiveBagParams struct {
+type GetReservableBagParams struct {
 	ID string `uri:"id" binding:"required,uuid"`
 }
 
-type ActiveBagResponse struct {
+type ReservableBagResponse struct {
 	ID            string               `json:"id"`
 	Title         string               `json:"title"`
 	Description   *string              `json:"description"`
@@ -23,31 +23,33 @@ type ActiveBagResponse struct {
 	Items         []ItemResponse       `json:"items"`
 }
 
-type GetActiveBagHandler struct {
-	getActiveBag *query.GetActiveBag
+type GetReservableBagHandler struct {
+	getReservableBag *query.GetReservableBag
 }
 
-func NewGetActiveBagHandler(getActiveBag *query.GetActiveBag) *GetActiveBagHandler {
-	return &GetActiveBagHandler{
-		getActiveBag: getActiveBag,
+func NewGetReservableBagHandler(
+	getReservableBag *query.GetReservableBag,
+) *GetReservableBagHandler {
+	return &GetReservableBagHandler{
+		getReservableBag: getReservableBag,
 	}
 }
 
-func (h *GetActiveBagHandler) Handle(c *gin.Context) {
-	var params GetActiveBagParams
+func (h *GetReservableBagHandler) Handle(c *gin.Context) {
+	var params GetReservableBagParams
 	if err := c.ShouldBindUri(&params); err != nil {
 		c.Error(err)
 		return
 	}
 
-	active, err := h.getActiveBag.Execute(c.Request.Context(), params.ID)
+	b, err := h.getReservableBag.Execute(c.Request.Context(), params.ID)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	items := make([]ItemResponse, len(active.Items))
-	for i, item := range active.Items {
+	items := make([]ItemResponse, len(b.Items))
+	for i, item := range b.Items {
 		items[i] = ItemResponse{
 			ID:       item.ID,
 			Name:     item.Name,
@@ -57,17 +59,17 @@ func (h *GetActiveBagHandler) Handle(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data": ActiveBagResponse{
-			ID:            active.ID,
-			Title:         active.Title,
-			Description:   active.Description,
-			Stock:         active.Stock,
-			Discount:      active.Discount,
-			OriginalPrice: active.OriginalPrice,
-			FinalPrice:    active.FinalPrice,
+		"data": ReservableBagResponse{
+			ID:            b.ID,
+			Title:         b.Title,
+			Description:   b.Description,
+			Stock:         b.Stock,
+			Discount:      b.Discount,
+			OriginalPrice: b.OriginalPrice,
+			FinalPrice:    b.FinalPrice,
 			PickupWindow: PickupWindowResponse{
-				Start: active.PickupStart,
-				End:   active.PickupEnd,
+				Start: b.PickupStart,
+				End:   b.PickupEnd,
 			},
 			Items: items,
 		},

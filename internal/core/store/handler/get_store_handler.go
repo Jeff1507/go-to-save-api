@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type GetStoreWithActiveBagsParams struct {
+type GetStoreParams struct {
 	ID string `uri:"id" binding:"required,uuid"`
 }
 
@@ -40,26 +40,24 @@ type StoreResponse struct {
 	Bags        []BagSummaryResponse `json:"bags"`
 }
 
-type GetStoreWithActiveBagsHandler struct {
-	getStoreWithActiveBags *query.GetStoreWithActiveBags
+type GetStoreHandler struct {
+	getStore *query.GetStore
 }
 
-func NewGetStoreWithActiveBagsHandler(
-	getStoreWithActiveBags *query.GetStoreWithActiveBags,
-) *GetStoreWithActiveBagsHandler {
-	return &GetStoreWithActiveBagsHandler{
-		getStoreWithActiveBags: getStoreWithActiveBags,
+func NewGetStoreHandler(getStore *query.GetStore) *GetStoreHandler {
+	return &GetStoreHandler{
+		getStore: getStore,
 	}
 }
 
-func (h *GetStoreWithActiveBagsHandler) Handle(c *gin.Context) {
-	var params GetStoreWithActiveBagsParams
+func (h *GetStoreHandler) Handle(c *gin.Context) {
+	var params GetStoreParams
 	if err := c.ShouldBindUri(&params); err != nil {
 		c.Error(err)
 		return
 	}
 
-	s, err := h.getStoreWithActiveBags.Execute(c.Request.Context(), params.ID)
+	s, err := h.getStore.Execute(c.Request.Context(), params.ID)
 	if err != nil {
 		c.Error(err)
 		return

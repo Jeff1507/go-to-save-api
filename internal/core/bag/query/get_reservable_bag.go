@@ -13,7 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type ActiveBagOutput struct {
+type ReservableBagOutput struct {
 	ID            string
 	Title         string
 	Description   *string
@@ -26,19 +26,19 @@ type ActiveBagOutput struct {
 	Items         []ItemOutput
 }
 
-type GetActiveBag struct {
+type GetReservableBag struct {
 	pg      *pgxpool.Pool
 	storage storage.Storage
 }
 
-func NewGetActiveBag(pg *pgxpool.Pool, storage storage.Storage) *GetActiveBag {
-	return &GetActiveBag{
+func NewGetReservableBag(pg *pgxpool.Pool, storage storage.Storage) *GetReservableBag {
+	return &GetReservableBag{
 		pg:      pg,
 		storage: storage,
 	}
 }
 
-func (qry *GetActiveBag) Execute(ctx context.Context, id string) (ActiveBagOutput, error) {
+func (qry *GetReservableBag) Execute(ctx context.Context, id string) (ReservableBagOutput, error) {
 	row := qry.pg.QueryRow(
 		ctx,
 		`
@@ -52,37 +52,37 @@ func (qry *GetActiveBag) Execute(ctx context.Context, id string) (ActiveBagOutpu
 			pickup_start, 
 			pickup_end
 		FROM bags
-		WHERE id = $1 AND status = 'ACTIVE' AND stock > 0
+		WHERE id = $1
 		`,
 		id,
 	)
 
 	var (
-		active      ActiveBagOutput
+		b           ReservableBagOutput
 		description sql.NullString
 	)
 	if err := row.Scan(
-		&active.ID,
-		&active.Title,
+		&b.ID,
+		&b.Title,
 		&description,
-		&active.Stock,
-		&active.OriginalPrice,
-		&active.FinalPrice,
-		&active.PickupStart,
-		&active.PickupEnd,
+		&b.Stock,
+		&b.OriginalPrice,
+		&b.FinalPrice,
+		&b.PickupStart,
+		&b.PickupEnd,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return ActiveBagOutput{}, bag.ErrNotFound
+			return ReservableBagOutput{}, bag.ErrNotFound
 		}
 
-		return ActiveBagOutput{}, fmt.Errorf("scan bag: %w", err)
+		return ReservableBagOutput{}, fmt.Errorf("scan bag: %w", err)
 	}
 
 	if description.Valid {
-		active.Description = &description.String
+		b.Description = &description.String
 	}
 
-	active.Discount = calculateDiscount(active.OriginalPrice, active.FinalPrice)
+	b.Discount = calculateDiscount(b.OriginalPrice, b.FinalPrice)
 
 	rows, err := qry.pg.Query(
 		ctx,
@@ -94,7 +94,7 @@ func (qry *GetActiveBag) Execute(ctx context.Context, id string) (ActiveBagOutpu
 		id,
 	)
 	if err != nil {
-		return ActiveBagOutput{}, fmt.Errorf("query bag items: %w", err)
+		return ReservableBagOutput{}, fmt.Errorf("query bag items: %w", err)
 	}
 	defer rows.Close()
 
@@ -109,7 +109,7 @@ func (qry *GetActiveBag) Execute(ctx context.Context, id string) (ActiveBagOutpu
 			&imageKey,
 			&item.Quantity,
 		); err != nil {
-			return ActiveBagOutput{}, fmt.Errorf("scan bag item: %w", err)
+			return ReservableBagOutput{}, fmt.Errorf("scan bag item: %w", err)
 		}
 
 		if imageKey.Valid {
@@ -117,12 +117,12 @@ func (qry *GetActiveBag) Execute(ctx context.Context, id string) (ActiveBagOutpu
 			item.ImageURL = &imageURL
 		}
 
-		active.Items = append(active.Items, item)
+		b.Items = append(b.Items, item)
 	}
 
 	if err := rows.Err(); err != nil {
-		return ActiveBagOutput{}, fmt.Errorf("iterate rows: %w", err)
+		return ReservableBagOutput{}, fmt.Errorf("iterate rows: %w", err)
 	}
 
-	return active, nil
+	return b, nil
 }

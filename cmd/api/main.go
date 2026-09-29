@@ -158,7 +158,8 @@ func start() error {
 
 	getStoreProfile := storeQuery.NewGetProfile(pg, fileStorage)
 	listNearbyStores := storeQuery.NewListNearbyStores(pg, fileStorage, sysClock)
-	getStoreWithActiveBags := storeQuery.NewGetStoreWithActiveBags(pg, fileStorage, sysClock)
+	getStore := storeQuery.NewGetStore(pg, fileStorage, sysClock)
+	searchStores := storeQuery.NewSearchStores(pg, fileStorage)
 
 	listProducts := productQuery.NewListProducts(pg, fileStorage)
 
@@ -166,7 +167,7 @@ func start() error {
 
 	listBags := bagQuery.NewListBags(pg)
 	getBag := bagQuery.NewGetBag(pg, fileStorage)
-	getActiveBag := bagQuery.NewGetActiveBag(pg, fileStorage)
+	getReservableBag := bagQuery.NewGetReservableBag(pg, fileStorage)
 
 	listOrders := orderQuery.NewListOrders(pg, fileStorage)
 	getOrder := orderQuery.NewGetOrder(pg, fileStorage)
@@ -213,7 +214,8 @@ func start() error {
 		storeHandler.NewUpdatePasswordHandler(updateStorePassword),
 		storeHandler.NewUpdateAddressHandler(updateStoreAddress),
 		storeHandler.NewListNearbyStoresHandler(listNearbyStores),
-		storeHandler.NewGetStoreWithActiveBagsHandler(getStoreWithActiveBags),
+		storeHandler.NewGetStoreHandler(getStore),
+		storeHandler.NewSearchStoresHandler(searchStores),
 	)
 
 	productRoutes := routes.NewProductRoutes(
@@ -240,7 +242,7 @@ func start() error {
 		bagHandler.NewUpdateBagHandler(updateBag),
 		bagHandler.NewUpdateStockHandler(updateBagStock),
 		bagHandler.NewCloseBagHandler(closeBag),
-		bagHandler.NewGetActiveBagHandler(getActiveBag),
+		bagHandler.NewGetReservableBagHandler(getReservableBag),
 	)
 
 	orderRoutes := routes.NewOrderRoutes(
