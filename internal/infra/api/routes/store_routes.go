@@ -24,7 +24,8 @@ type StoreRoutes struct {
 	updatePassword    *handler.UpdatePasswordHandler
 	updateAddress     *handler.UpdateAddressHandler
 	listNearby        *handler.ListNearbyStoresHandler
-	getWithActiveBags *handler.GetStoreWithActiveBagsHandler
+	getStore          *handler.GetStoreHandler
+	searchByName      *handler.SearchStoresHandler
 }
 
 func NewStoreRoutes(
@@ -45,7 +46,8 @@ func NewStoreRoutes(
 	updatePassword *handler.UpdatePasswordHandler,
 	updateAddress *handler.UpdateAddressHandler,
 	listNearby *handler.ListNearbyStoresHandler,
-	getWithActiveBags *handler.GetStoreWithActiveBagsHandler,
+	getStore *handler.GetStoreHandler,
+	searchByName *handler.SearchStoresHandler,
 ) *StoreRoutes {
 	return &StoreRoutes{
 		auth:              auth,
@@ -65,17 +67,18 @@ func NewStoreRoutes(
 		updatePassword:    updatePassword,
 		updateAddress:     updateAddress,
 		listNearby:        listNearby,
-		getWithActiveBags: getWithActiveBags,
+		getStore:          getStore,
+		searchByName:      searchByName,
 	}
 }
 
 func (r *StoreRoutes) Register(router *gin.Engine) {
-	stores := router.Group("/stores")
-	stores.Use(handler.ErrorHandler)
-	stores.Use(middleware.MaxRequestBodySize(5 << 20))
+	store := router.Group("/store")
+	store.Use(handler.ErrorHandler)
+	store.Use(middleware.MaxRequestBodySize(5 << 20))
 
 	// Rotas públicas
-	public := stores.Group("")
+	public := store.Group("")
 	public.POST("/signup", r.signup.Handle)
 	public.POST("/login", r.login.Handle)
 	public.POST("/email-verification", r.emailVerification.Handle)
@@ -84,7 +87,7 @@ func (r *StoreRoutes) Register(router *gin.Engine) {
 	public.PATCH("/reset-password", r.resetPassword.Handle)
 
 	// Rotas privadas
-	private := stores.Group("")
+	private := store.Group("")
 	private.Use(r.auth.AuthenticateStore)
 	private.GET("/me", r.getMe.Handle)
 	private.PATCH("/me", r.updateMe.Handle)
@@ -97,8 +100,10 @@ func (r *StoreRoutes) Register(router *gin.Engine) {
 	private.POST("/logout-all", r.logoutAll.Handle)
 
 	// Rotas do app mobile
-	reservation := stores.Group("")
-	reservation.Use(r.auth.AuthenticateCustomer)
-	reservation.GET("", r.listNearby.Handle)
-	reservation.GET("/:id", r.getWithActiveBags.Handle)
+	stores := router.Group("/stores")
+	stores.Use(handler.ErrorHandler)
+	stores.Use(r.auth.AuthenticateCustomer)
+	stores.GET("", r.listNearby.Handle)
+	stores.GET("/:id", r.getStore.Handle)
+	stores.GET("/search", r.searchByName.Handle)
 }

@@ -61,12 +61,12 @@ func NewCustomerRoutes(
 }
 
 func (r *CustomerRoutes) Register(router *gin.Engine) {
-	customers := router.Group("/customers")
-	customers.Use(handler.ErrorHandler)
-	customers.Use(middleware.MaxRequestBodySize(5 << 20))
+	customer := router.Group("")
+	customer.Use(handler.ErrorHandler)
+	customer.Use(middleware.MaxRequestBodySize(5 << 20))
 
 	// Rotas públicas
-	public := customers.Group("")
+	public := customer.Group("")
 	public.POST("/signup", r.signup.Handle)
 	public.POST("/login", r.login.Handle)
 	public.POST("/email-verification", r.emailVerification.Handle)
@@ -75,7 +75,7 @@ func (r *CustomerRoutes) Register(router *gin.Engine) {
 	public.PATCH("/reset-password", r.resetPassword.Handle)
 
 	// Rotas privadas
-	private := customers.Group("")
+	private := customer.Group("")
 	private.Use(r.auth.AuthenticateCustomer)
 	private.GET("/me", r.getMe.Handle)
 	private.PATCH("/me", r.updateMe.Handle)

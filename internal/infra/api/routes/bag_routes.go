@@ -7,14 +7,14 @@ import (
 )
 
 type BagRoutes struct {
-	auth        *middleware.Authentication
-	list        *handler.ListBagsHandler
-	get         *handler.GetBagHandler
-	create      *handler.CreateBagHandler
-	update      *handler.UpdateBagHandler
-	updateStock *handler.UpdateStockHandler
-	close       *handler.CloseBagHandler
-	getActive   *handler.GetActiveBagHandler
+	auth          *middleware.Authentication
+	list          *handler.ListBagsHandler
+	get           *handler.GetBagHandler
+	create        *handler.CreateBagHandler
+	update        *handler.UpdateBagHandler
+	updateStock   *handler.UpdateStockHandler
+	close         *handler.CloseBagHandler
+	getReservable *handler.GetReservableBagHandler
 }
 
 func NewBagRoutes(
@@ -25,17 +25,17 @@ func NewBagRoutes(
 	update *handler.UpdateBagHandler,
 	updateStock *handler.UpdateStockHandler,
 	close *handler.CloseBagHandler,
-	getActive *handler.GetActiveBagHandler,
+	getReservable *handler.GetReservableBagHandler,
 ) *BagRoutes {
 	return &BagRoutes{
-		auth:        auth,
-		list:        list,
-		get:         get,
-		create:      create,
-		update:      update,
-		updateStock: updateStock,
-		close:       close,
-		getActive:   getActive,
+		auth:          auth,
+		list:          list,
+		get:           get,
+		create:        create,
+		update:        update,
+		updateStock:   updateStock,
+		close:         close,
+		getReservable: getReservable,
 	}
 }
 
@@ -43,7 +43,7 @@ func (r *BagRoutes) Register(router *gin.Engine) {
 	bags := router.Group("/bags")
 	bags.Use(handler.ErrorHandler)
 	bags.Use(r.auth.AuthenticateCustomer)
-	bags.GET("/:id", r.getActive.Handle)
+	bags.GET("/:id", r.getReservable.Handle)
 
 	store := router.Group("/store/bags")
 	store.Use(handler.ErrorHandler)
