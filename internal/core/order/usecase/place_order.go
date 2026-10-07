@@ -63,6 +63,15 @@ func (uc *PlaceOrder) Execute(
 	}
 
 	err := uc.transactions.Do(ctx, func(ctx context.Context) error {
+		hasPending, err := uc.orderRepo.HasPendingByCustomer(ctx, input.CustomerID)
+		if err != nil {
+			return fmt.Errorf("check pending order: %w", err)
+		}
+
+		if hasPending {
+			return order.ErrCustomerHasPendingOrder
+		}
+
 		items := make([]ItemInput, len(input.Items))
 		copy(items, input.Items)
 

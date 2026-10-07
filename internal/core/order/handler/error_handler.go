@@ -44,6 +44,9 @@ func domainError(err error) (int, string) {
 	case errors.Is(err, order.ErrNotFound):
 		return http.StatusNotFound, "Pedido não encontrado"
 
+	case errors.Is(err, order.ErrCustomerHasPendingOrder):
+		return http.StatusBadRequest, "Você já possui um pedido pendente"
+
 	case errors.Is(err, order.ErrCannotPlaceOrder):
 		return http.StatusBadRequest, "Não foi possível realizar o pedido"
 

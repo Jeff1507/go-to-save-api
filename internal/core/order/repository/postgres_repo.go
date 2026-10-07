@@ -104,26 +104,6 @@ func (repo *PostgresRepo) save(ctx context.Context, tx pgx.Tx, o *order.Order) e
 	return nil
 }
 
-func (repo *PostgresRepo) Has(ctx context.Context, bagID string) (bool, error) {
-	var exists bool
-	if err := repo.pg.QueryRow(
-		ctx,
-		`
-		SELECT EXISTS(
-			SELECT 1
-			FROM order_items i
-			JOIN orders o ON o.id = i.order_id
-			WHERE i.bag_id = $1 AND o.status = 'PENDING'
-		)
-		`,
-		bagID,
-	).Scan(&exists); err != nil {
-		return false, fmt.Errorf("check pending order for bag: %w", err)
-	}
-
-	return exists, nil
-}
-
 func (repo *PostgresRepo) Update(ctx context.Context, o *order.Order) error {
 	tx, ok := transaction.Querier(ctx)
 	if ok {
@@ -195,6 +175,42 @@ func (repo *PostgresRepo) update(ctx context.Context, tx pgx.Tx, o *order.Order)
 	}
 
 	return nil
+}
+
+func (repo *PostgresRepo) HasPendingByBag(ctx context.Context, bagID string) (bool, error) {
+	var exists bool
+	if err := repo.pg.QueryRow(
+		ctx,
+		`
+		SELECT EXISTS(
+			SELECT 1
+			FROM order_items i
+			JOIN orders o ON o.id = i.order_id
+			WHERE i.bag_id = $1 AND o.status = 'PENDING'
+		)
+		`,
+		bagID,
+	).Scan(&exists); err != nil {
+		return false, fmt.Errorf("check pending order for bag: %w", err)
+	}
+
+	return exists, nil
+}
+
+func (repo *PostgresRepo) HasPendingByCustomer(
+	ctx context.Context,
+	customerID string,
+) (bool, error) {
+	var exists bool
+	if err := repo.pg.QueryRow(
+		ctx,
+		`SELECT EXISTS(SELECT 1 FROM orders WHERE customer_id = $1 AND status = 'PENDING')`,
+		customerID,
+	).Scan(&exists); err != nil {
+		return false, fmt.Errorf("check pending order for customer: %w", err)
+	}
+
+	return exists, nil
 }
 
 func (repo *PostgresRepo) Find(ctx context.Context, id string) (*order.Order, error) {

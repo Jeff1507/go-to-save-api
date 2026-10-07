@@ -65,7 +65,7 @@ func (uc *UpdateBag) Execute(ctx context.Context, input UpdateBagInput) error {
 	}
 
 	// Verifica se a bag pertence a um pedido, se pertencer a edição é bloqueada.
-	hasPendingOrder, err := uc.orderRepo.Has(ctx, b.ID())
+	hasPendingOrder, err := uc.orderRepo.HasPendingByBag(ctx, b.ID())
 	if err != nil {
 		return fmt.Errorf("check pending order: %w", err)
 	}
