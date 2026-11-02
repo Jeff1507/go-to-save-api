@@ -11,7 +11,7 @@ import (
 
 type BagSummaryResponse struct {
 	ID            string               `json:"id"`
-	Title         string               `json:"storeId"`
+	Title         string               `json:"title"`
 	Description   *string              `json:"description"`
 	Stock         int32                `json:"stock"`
 	Discount      int32                `json:"discount"`

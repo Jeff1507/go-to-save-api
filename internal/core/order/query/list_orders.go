@@ -11,14 +11,15 @@ import (
 )
 
 type OrderSummaryOutput struct {
-	ID          string
-	Status      string
-	TotalPrice  int64 // Preço em centavos
-	PickupStart time.Time
-	PickupEnd   time.Time
-	CreatedAt   time.Time
-	CompletedAt *time.Time
-	Store       StoreOutput
+	ID              string
+	Status          string
+	TotalPrice      int64 // Preço em centavos
+	PickupStart     time.Time
+	PickupEnd       time.Time
+	CreatedAt       time.Time
+	CompletedAt     *time.Time
+	ItemsTotalCount int32
+	Store           StoreOutput
 }
 
 type ListOrders struct {
@@ -48,6 +49,10 @@ func (qry *ListOrders) Execute(
 			o.pickup_end,
 			o.created_at,
 			o.completed_at,
+			(
+				SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi 
+				WHERE oi.order_id = o.id
+			) AS items_total_count,
 			s.id, 
 			s.name, 
 			s.avatar_key,
@@ -93,6 +98,7 @@ func (qry *ListOrders) Execute(
 			&ord.PickupEnd,
 			&ord.CreatedAt,
 			&ord.CompletedAt,
+			&ord.ItemsTotalCount,
 			&ord.Store.ID,
 			&ord.Store.Name,
 			&storeAvatarKey,

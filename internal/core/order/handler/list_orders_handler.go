@@ -10,13 +10,14 @@ import (
 )
 
 type OrderSummaryResponse struct {
-	ID           string               `json:"id"`
-	Status       string               `json:"status"`
-	TotalPrice   int64                `json:"totalPrice"`
-	CreatedAt    time.Time            `json:"createdAt"`
-	CompletedAt  *time.Time           `json:"completedAt"`
-	PickupWindow PickupWindowResponse `json:"pickupWindow"`
-	Store        StoreResponse        `json:"store"`
+	ID              string               `json:"id"`
+	Status          string               `json:"status"`
+	TotalPrice      int64                `json:"totalPrice"`
+	CreatedAt       time.Time            `json:"createdAt"`
+	CompletedAt     *time.Time           `json:"completedAt"`
+	ItemsTotalCount int32                `json:"itemsTotalCount"`
+	PickupWindow    PickupWindowResponse `json:"pickupWindow"`
+	Store           StoreResponse        `json:"store"`
 }
 
 type ListOrdersHandler struct {
@@ -45,11 +46,12 @@ func (h *ListOrdersHandler) Handle(c *gin.Context) {
 	response := make([]OrderSummaryResponse, 0, len(orders))
 	for _, ord := range orders {
 		response = append(response, OrderSummaryResponse{
-			ID:          ord.ID,
-			Status:      ord.Status,
-			TotalPrice:  ord.TotalPrice,
-			CreatedAt:   ord.CreatedAt,
-			CompletedAt: ord.CompletedAt,
+			ID:              ord.ID,
+			Status:          ord.Status,
+			TotalPrice:      ord.TotalPrice,
+			CreatedAt:       ord.CreatedAt,
+			CompletedAt:     ord.CompletedAt,
+			ItemsTotalCount: ord.ItemsTotalCount,
 			PickupWindow: PickupWindowResponse{
 				Start: ord.PickupStart,
 				End:   ord.PickupEnd,
