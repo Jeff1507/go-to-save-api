@@ -157,6 +157,7 @@ func start() error {
 	getCustomerProfile := customerQuery.NewGetProfile(pg, fileStorage)
 
 	getStoreProfile := storeQuery.NewGetProfile(pg, fileStorage)
+	getStats := storeQuery.NewGetStats(pg, sysClock)
 	listNearbyStores := storeQuery.NewListNearbyStores(pg, fileStorage, sysClock)
 	getStore := storeQuery.NewGetStore(pg, fileStorage, sysClock)
 	searchStores := storeQuery.NewSearchStores(pg, fileStorage)
@@ -213,6 +214,7 @@ func start() error {
 		storeHandler.NewUpdateEmailHandler(updateStoreEmail),
 		storeHandler.NewUpdatePasswordHandler(updateStorePassword),
 		storeHandler.NewUpdateAddressHandler(updateStoreAddress),
+		storeHandler.NewGetStatsHandler(getStats),
 		storeHandler.NewListNearbyStoresHandler(listNearbyStores),
 		storeHandler.NewGetStoreHandler(getStore),
 		storeHandler.NewSearchStoresHandler(searchStores),

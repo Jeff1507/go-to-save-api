@@ -23,6 +23,7 @@ type StoreRoutes struct {
 	updateEmail       *handler.UpdateEmailHandler
 	updatePassword    *handler.UpdatePasswordHandler
 	updateAddress     *handler.UpdateAddressHandler
+	stats             *handler.GetStatsHandler
 	listNearby        *handler.ListNearbyStoresHandler
 	getStore          *handler.GetStoreHandler
 	searchByName      *handler.SearchStoresHandler
@@ -45,6 +46,7 @@ func NewStoreRoutes(
 	updateEmail *handler.UpdateEmailHandler,
 	updatePassword *handler.UpdatePasswordHandler,
 	updateAddress *handler.UpdateAddressHandler,
+	stats *handler.GetStatsHandler,
 	listNearby *handler.ListNearbyStoresHandler,
 	getStore *handler.GetStoreHandler,
 	searchByName *handler.SearchStoresHandler,
@@ -66,6 +68,7 @@ func NewStoreRoutes(
 		updateEmail:       updateEmail,
 		updatePassword:    updatePassword,
 		updateAddress:     updateAddress,
+		stats:             stats,
 		listNearby:        listNearby,
 		getStore:          getStore,
 		searchByName:      searchByName,
@@ -96,6 +99,7 @@ func (r *StoreRoutes) Register(router *gin.Engine) {
 	private.PATCH("/me/email", r.updateEmail.Handle)
 	private.PATCH("/me/password", r.updatePassword.Handle)
 	private.PATCH("/me/address", r.updateAddress.Handle)
+	private.GET("/me/stats", r.stats.Handle)
 	private.POST("/logout", r.logout.Handle)
 	private.POST("/logout-all", r.logoutAll.Handle)
 
